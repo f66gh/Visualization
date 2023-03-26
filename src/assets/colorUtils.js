@@ -1,0 +1,21 @@
+export const color = {
+    gray1: "#A6A6A6",
+    gray2: "#E5E5E5",
+    white1: "#f6f6f6",
+    pink1: "#DC667E",
+    pink2: "#EE9A9A",
+    brown1: "#BF7105",
+    brown2: "#bcaba4",
+    brown3: "#90756a",
+    green1: "#71ae49",
+    green2: "#93AE74",
+    mainGreen: "#4f9a95",
+    yellow1: "#EBBD62",
+    yellow2: "#bf7105",
+    blue1: "#3A4A60",
+    blue2: "#5a99c5",
+    mainBlue: "#31658c",
+    purple1: "#b29ed8",
+    purple2: "#7754ba",
+
+}
