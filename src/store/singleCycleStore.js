@@ -4,12 +4,16 @@ export const singleCycleStore = defineStore({
     id: 'user',
     state: () => {
         return {
-            singleCycle: null
+            singleCycle: null,
+            aveCtb: null
         }
     },
     actions: {
         updateSingleCycle(singleCycle){
             this.singleCycle = singleCycle
+        },
+        updateAveCtb(aveCtb){
+            this.aveCtb = aveCtb
         }
     }
 })

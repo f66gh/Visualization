@@ -1,5 +1,8 @@
 <template>
     <div class="container">
+      <div class="SC_legend">
+        <img src="src/assets/SC_Lenged.png" alt="">
+      </div>
         <div class="main-title" style="background-color: #31658C;"> Cycles Selected View</div>
         <div class="top">
             <div class="legend">
@@ -92,6 +95,18 @@ export default defineComponent({
 
 .container {
     width: 100%;
+  position: relative;
+
+  .SC_legend {
+    position: absolute;
+    left: -48px;
+    top: 72px;
+    pointer-events: none;
+
+    img{
+      transform: scale(0.46);
+    }
+  }
 
     .top {
         height: 45px;

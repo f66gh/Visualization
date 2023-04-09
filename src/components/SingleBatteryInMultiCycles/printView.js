@@ -18,6 +18,7 @@ export const printView = (type, selectedData, middleLeft , middleRight, selected
     const barStroke = '#6e6e6e'
     const middleLineStroke = '#1a1a1a'
     const middleRange = middleRight - middleLeft + 1 || 5
+    const singleCycleLen = 100 // 注意这个写死了
 
 
     const dealArrLst = (lst) => {
@@ -77,7 +78,8 @@ export const printView = (type, selectedData, middleLeft , middleRight, selected
             .attr('y', (d) => scaleY(d.Q3))
             .attr('width', scaleX.bandwidth())
             .attr('height', (d) => scaleY(d.Q1) - scaleY(d.Q3))
-            .attr('stroke', '#e5e5e5')
+            .attr('stroke', '#6e6e6e')
+            .attr('stroke-width', 0.5)
 
         let yAxisGenerator
 
@@ -138,7 +140,7 @@ export const printView = (type, selectedData, middleLeft , middleRight, selected
                         .attr('y1', lines[i].y1)
                         .attr('y2', lines[i].y2)
                         .attr('stroke', '#a6a6a6')
-                        .attr('stroke-width', 0.5)
+                        .attr('stroke-width', 1)
                         .attr('stroke-dasharray', () => i === 3 ? "2,2" : "")
                 });
         });
@@ -211,8 +213,8 @@ export const printView = (type, selectedData, middleLeft , middleRight, selected
     const printDivider = (box, xScale, boxHeight, middleRange) => {
         for(let i = 1; i < middleRange; i++) {
             box.append('line')
-                .attr('x1', xScale(i * 10))
-                .attr('x2', xScale(i * 10))
+                .attr('x1', xScale(i * singleCycleLen))
+                .attr('x2', xScale(i * singleCycleLen))
                 .attr('stroke', '#a6a6a6')
                 .attr('y2', boxHeight)
                 .attr("stroke-dasharray", "2,2")
@@ -275,9 +277,6 @@ export const printView = (type, selectedData, middleLeft , middleRight, selected
         //计划入下：全局数据，用曲线图表示中间五个电池数据，两侧分别用五个箱线图等分覆盖所有数据。
         //设计中间五个电池的序号取值范围可变，设计两边电池数据序号范围可变。若超出了数据范围则不显示
 
-        let boxSingleRange = 25 //初始化25个一组
-        // let middleRange = 5 //5个在中间显示
-        // let selectedBattery = 2 //假设选的2号电池
         const lineRangeInit = middleLeft || Math.floor(batteryData.length / 2)
         const lineRangeEnd = middleRight || Math.floor(batteryData.length / 2) + 5
         let lineRange = [] //初始化显示中间5个
@@ -311,7 +310,6 @@ export const printView = (type, selectedData, middleLeft , middleRight, selected
         lineMinForCycleId = parseInt(batteryData[leftBoxDomain[0][0]]['number_of_cycles'])
         lineMaxForCycleId = parseInt(batteryData[rightBoxDomain[4][1] - 1   ]['number_of_cycles'])
 
-        //注意这里单次循环内的值我采用的是自己编的(根据真的平均值生成随机值）
         let tempLst = []
         batteryData.forEach((v, i) => {
             tempLst.push(v[`battery_${selectedBattery}_${name()}`])
@@ -365,7 +363,7 @@ export const printView = (type, selectedData, middleLeft , middleRight, selected
         }
 
         const xScaleLine = d3.scaleLinear()
-            .domain([0, middleRange * 10 - 1])
+            .domain([1, middleRange * singleCycleLen - 1])
             .range([margin, lineWidth - margin])
 
         const linePath = d3.line()
@@ -393,7 +391,7 @@ export const printView = (type, selectedData, middleLeft , middleRight, selected
             .attr('height', d => yScaleRect(d))
             .attr('width', d => leftScaleX.bandwidth() * 0.6)
             .attr('x', (d, i) => leftScaleX(leftBoxDomainStr[i]))
-            .attr('y', 0)
+            .attr('y', d => bottomHeight - yScaleRect(d))
             .attr('fill', rectColor())
 
         svgRightBottom.selectAll('rect')
@@ -402,7 +400,7 @@ export const printView = (type, selectedData, middleLeft , middleRight, selected
             .attr('height', d => yScaleRect(d))
             .attr('width', d => rightScaleX.bandwidth() * 0.6)
             .attr('x', (d, i) => rightScaleX(rightBoxDomainStr[i]))
-            .attr('y', 0)
+            .attr('y', d => bottomHeight - yScaleRect(d))
             .attr('fill', rectColor())
 
         svgBottomAbove.append('line')
@@ -432,7 +430,7 @@ export const printView = (type, selectedData, middleLeft , middleRight, selected
             .attr('transform', `translate (${936 / 2 - 10} ${yScaleRect(aveAve) + 2})`)
 
         //线横坐标标签
-        const cal = (i) => (xScaleLine(i * 10) + xScaleLine((i + 1) * 10)) / 2
+        const cal = (i) => (xScaleLine(i * singleCycleLen) + xScaleLine((i + 1) * singleCycleLen)) / 2
         svgTopAxisMiddle.selectAll("g.cell")
             .data(lineRangeForCycleId)
             .enter().append("g").classed('cell', true)

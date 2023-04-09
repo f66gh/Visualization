@@ -1,4 +1,75 @@
 import * as d3 from "d3"
+import tempList from '@/json/tempList.json'
+import voltList from '@/json/voltList.json'
+import {selectedBatteryStore} from "@/store/selectedBatteryStore";
+import {batteryListStore} from "@/store/batteryListStore";
+
+// 因为温度探针只有34个，而电池（可检测电压）总数有95个，故只展示34个电池的数据
+const batteryLen = tempList[0][0].length
+let res;
+
+const updateData = (singleCycle, circleData, res) => {
+    const currTemp = res[singleCycle - 1][`battery_${circleData.number}_temp`]
+    const currTempList = currTemp.split(',')
+    let tempAve = 0, tempHigh = 0, tempLow = 10000
+    currTempList.forEach(v => {
+        v = +v
+        if(v > tempHigh) tempHigh = v
+        else if(v < tempLow) tempLow = v
+        tempAve += v
+    })
+    tempAve /= 100
+
+    const currVolt = res[singleCycle - 1][`battery_${circleData.number}_volt`]
+    const currVoltList = currVolt.split(',')
+    let voltAve = 0, voltHigh = 0, voltLow = 10000
+    currVoltList.forEach(v => {
+        v = +v
+        if(v > voltHigh) voltHigh = v
+        else if(v < voltLow) voltLow = v
+        voltAve += v
+    })
+    voltAve /= 100
+
+    const selectedBattery = selectedBatteryStore()
+    selectedBattery.updateSelectedBattery(circleData.number, {
+        tempAve, tempHigh, tempLow, voltAve, voltHigh, voltLow
+    })
+}
+export const dealData = (tempList, voltList) => {
+    const batteryLen = voltList[0][0].length
+    const dataList = [{}] // 最终数据
+    voltList.forEach((v, i) => {
+        const dataArr = [[]] // 临时存储
+        v.forEach((va, id) => {
+            for(let n = 0; n < batteryLen; n++){
+                if(!dataArr[n]) dataArr.push([])
+                dataArr[n].push(va[n])
+            }
+        })
+        dataArr.forEach((va, id) => {
+            if(!dataList[i]) dataList.push({})
+            dataList[i][`battery_${id + 1}_volt`] = va.join(',')
+        })
+    })
+    tempList.forEach((v, i) => {
+        const dataArr = [[]] // 临时存储
+        v.forEach((va, id) => {
+            for(let n = 0; n < batteryLen; n++){
+                if(!dataArr[n]) dataArr.push([])
+                dataArr[n].push(va[n])
+            }
+        })
+        dataArr.forEach((va, id) => {
+            if(!dataList[i]) dataList.push({})
+            dataList[i][`battery_${id + 1}_temp`] = va.join(',')
+            dataList[i]['number_of_cycles'] = i + 1
+        })
+    })
+    res = dataList
+    const listStore = batteryListStore()
+    listStore.updateBatteryVoltList(dataList)
+}
 
 const getArr = (res, cycle, battery) => {
     if(battery) {
@@ -18,7 +89,7 @@ const getArr = (res, cycle, battery) => {
         const currData = res[+(cycle) + 1]
         let voltArrStr = []
         let tempArrStr = []
-        for(let i = 1; i <= 5; i++) {
+        for(let i = 1; i <= batteryLen; i++) {
             voltArrStr.push(currData[`battery_${i}_volt`])
             tempArrStr.push(currData[`battery_${i}_temp`])
         }
@@ -39,12 +110,6 @@ export const dotView = (singleCycle, currTempBtn, currVoltBtn) => {
         .attr('width', '100%')
         .attr('height', '100%')
         .attr('viewBox', `0 0 ${width} ${height}`)
-    function colorScale(num){
-        const color = d3.scaleLinear()
-            .domain([0, 10])
-            .range(['#df4343', '#4f9a95'])
-        return color(num)
-    }
 
     const findMax = (allLst) => {
         return allLst.map((v, i) => {
@@ -74,16 +139,13 @@ export const dotView = (singleCycle, currTempBtn, currVoltBtn) => {
             }
         })
     }
-
-    d3.csv('src/csv/output7.csv').then(res => {
         const currData = res[singleCycle - 1]
 
         const strTempArr = []
         const strVoltArr = []
         let currDotArr = []
 
-        // 注意这里写死了5个电池
-        for(let i = 1; i <= 5; i++) {
+        for(let i = 1; i <= batteryLen; i++) {
             strTempArr.push(currData[`battery_${i}_temp`])
             strVoltArr.push(currData[`battery_${i}_volt`])
             currDotArr.push({number: i})
@@ -123,13 +185,39 @@ export const dotView = (singleCycle, currTempBtn, currVoltBtn) => {
             currTempArr = minTempArr
         } else currTempArr = aveTempArr
 
-        currDotArr = currDotArr.map((v, i) => {
+    let high = 0
+    let low = 10000
+    let ave = 0
+    currTempArr.forEach(v => {
+        v = v.data
+        if(v > high) high = v
+        else if(v < low) low = v
+        ave += v
+    })
+    ave = ave / batteryLen
+
+    currDotArr = currDotArr.map((v, i) => {
             return {
                 volt: currVoltArr[i].data,
                 temp: currTempArr[i].data,
-                number: i + 1
+                number: i + 1,
+                status: Math.abs(currTempArr[i].data - ave) / (high - low)
             }
         })
+
+    const statusList = []
+    currDotArr.forEach((v) => {
+        statusList.push(v.status)
+    })
+
+
+    function colorScale(num){
+
+        const color = d3.scaleLinear()
+            .domain(d3.extent(statusList))
+            .range(['#4f9a95', '#df4343'])
+        return color(num)
+    }
 
         const yDomain = currVoltArr.map(v => v.data)
         const xDomain = currTempArr.map(v => v.data)
@@ -171,15 +259,25 @@ export const dotView = (singleCycle, currTempBtn, currVoltBtn) => {
                 .attr("x1", margin)
                 .attr("x2", width - margin));
 
-        svg.append("g")
+        const circle = svg.append("g")
             .selectAll('circle')
             .data(currDotArr)
             .enter()
             .append('circle')
-            .attr('fill', d => colorScale(d['number']))
+            .attr('fill', d => colorScale(d['status']))
             .attr('cx', d => xScale(d.temp))
             .attr('cy', d => yScale(d.volt))
             .attr('r', d => 14)
+
+    circle.on('mousemove', () => {
+        circle.attr('cursor', 'pointer')
+    })
+
+    circle.on('click', ({}, circleData) => {
+        violinView(singleCycle - 1, circleData.number - 1)
+        lineView(singleCycle - 1, circleData.number - 1)
+        updateData(singleCycle, circleData, res)
+    })
 
         svg.append("g")
             .selectAll('text')
@@ -187,7 +285,7 @@ export const dotView = (singleCycle, currTempBtn, currVoltBtn) => {
             .enter()
             .append('text')
             .attr('x', d => xScale(d.temp) - 10)
-            .attr('y', d => yScale(d.volt) + 10)
+            .attr('y', d => yScale(d.volt) + 5)
             .text(d => d['number'])
             .attr('font-size', 16)
             .attr('fill', 'white')
@@ -195,11 +293,13 @@ export const dotView = (singleCycle, currTempBtn, currVoltBtn) => {
         svg.append("g").call(xAxis)
         svg.append("g").call(yAxis)
         svg.append("g").call(grid)
-    })
+
+    updateData(singleCycle, {number: 1}, res)
 }
 
 export const violinView = (cycle, battery) => {
     const width = 80
+
     const height = 55
     const margin = 5
     const offset = 5
@@ -288,7 +388,6 @@ export const violinView = (cycle, battery) => {
         return voltDisArr
     }
 
-    d3.csv('src/csv/output7.csv').then(res => {
         const {voltArr, tempArr} = getArr(res, cycle, battery)
 
         const tempDisArr = calcTempDis(tempArr)
@@ -305,9 +404,6 @@ export const violinView = (cycle, battery) => {
         const xScaleVolt = d3.scaleLinear()
             .domain([d3.max(voltDisArr.map(d => d.value)), d3.min(voltDisArr.map(d => -d.value))])
             .range([1, width / 2 - margin * 2 - 1])
-
-        const yAxisTemp = d3.axisLeft().scale(yScaleTemp)
-        const yAxisVolt = d3.axisRight().scale(yScaleVolt)
 
         const xAxisTemp = d3.axisBottom().scale(xScaleTemp)
         const xAxisVolt = d3.axisBottom().scale(xScaleVolt)
@@ -355,14 +451,14 @@ export const violinView = (cycle, battery) => {
             .datum(tempDisArr)
             .attr('transform', `translate(${offset},${offset})`)
             .attr('d', d => areaTempPos(d))
-            .attr('fill', "#bcaba4")
+            .attr('fill', "#5a99c5")
             .attr('stroke', 'none')
 
         svgLeft.append('path')
             .datum(tempDisArr)
             .attr('transform', `translate(${offset},${offset})`)
             .attr('d', d => areaTempNeg(d))
-            .attr('fill', "#bcaba4")
+            .attr('fill', "#5a99c5")
 
         svgLeft.append('path')
             .datum(tempDisArr)
@@ -373,13 +469,13 @@ export const violinView = (cycle, battery) => {
 
         svgRight.append('path')
             .datum(voltDisArr)
-            .attr('fill', '#5a99c5')
+            .attr('fill', '#bcaba4')
             .attr('transform', `translate(0,${offset})`)
             .attr('d', d => areaVoltPos(d))
 
         svgRight.append('path')
             .datum(voltDisArr)
-            .attr('fill', '#5a99c5')
+            .attr('fill', '#bcaba4')
             .attr('transform', `translate(0,${offset})`)
             .attr('d', d => areaVoltNeg(d))
 
@@ -389,11 +485,10 @@ export const violinView = (cycle, battery) => {
             .attr('stroke', '#a6a6a6')
             .attr('stroke-width', '2')
             .attr('transform', `translate(0,${offset})`)
-    })
 }
 
 export const violinSetView = (type, cycle) => {
-    const width = 300
+    const width = 2100
     let height = 67
     const margin = 5
     let color = null
@@ -406,22 +501,21 @@ export const violinSetView = (type, cycle) => {
         .attr('height', height)
         .attr('viewBox', `0 0 ${width} ${height}`)
 
-    d3.csv('src/csv/output7.csv').then(res => {
-        // 这里也是写死了5个
         let newArr = []
         const {voltArr, tempArr} = getArr(res, cycle)
         if(type === 'volt'){
-            color = '#5a99c5'
+            color = '#afa8a5'
+
             newArr = voltArr
         }else {
-            color = '#afa8a5'
+            color = '#5a99c5'
             newArr = tempArr
         }
 
         let max = 0
         let min = 10000
 
-        for(let i = 0; i < 5; i++) {
+        for(let i = 0; i < batteryLen; i++) {
             max = max < d3.max(newArr[i]) ? d3.max(newArr[i]) : max
             min = min > d3.min(newArr[i]) ? d3.min(newArr[i]) : min
         }
@@ -435,7 +529,7 @@ export const violinSetView = (type, cycle) => {
             .range([0, height])
 
         const xScaleVio = d3.scaleLinear()
-            .domain([0, 5])
+            .domain([0, batteryLen])
             .range([margin, width - margin])
 
 
@@ -443,8 +537,8 @@ export const violinSetView = (type, cycle) => {
             .y((d, i) => {
                 return yScaleArea(i)
             })
-            .x0(d => -d.length * 8)
-            .x1(d => d.length * 8)
+            .x0(d => -d.length)
+            .x1(d => d.length)
             .curve(d3.curveCatmullRom)
 
 
@@ -458,12 +552,22 @@ export const violinSetView = (type, cycle) => {
             .append('path')
             .attr('id', (d, i) => 'violinPath' + i)
             .attr('class', 'violinPath')
-            .attr('transform', (d, i) => `translate(${xScaleVio(i) + 35}, 0)`)
+            .attr('transform', (d, i) => `translate(${xScaleVio(i) + 35}, 2)`)
             .attr('d', d => {
                 return areaGen(histoGramGen(d))
             })
             .style('fill', color)
-    })
+
+    svg.selectAll('.violinText')
+        .data(newArr)
+        .enter()
+            .append('text')
+        .attr('class', 'violinPath')
+            .attr('transform', (d, i) => `translate(${xScaleVio(i) + 28}, 8)`)
+            .text((d, i) => `No.${i + 1}`)
+            .attr("font-size", 8)
+            .attr("fill", '#888')
+
 }
 
 export const lineView = (cycle, battery) => {
@@ -478,7 +582,6 @@ export const lineView = (cycle, battery) => {
         .attr('height', '100%')
         .attr('viewBox', `0 0 ${width} ${height}`)
 
-    d3.csv('src/csv/output7.csv').then(res => {
         const {voltArr, tempArr} = getArr(res, cycle, battery)
 
         const yScaleLeft = d3.scaleLinear()
@@ -556,5 +659,8 @@ export const lineView = (cycle, battery) => {
             .attr('stroke-width', 2)
             .attr('fill', 'none')
 
+    document.addEventListener('selectstart',function(e){
+        e.preventDefault();
     })
+
 }

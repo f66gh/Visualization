@@ -1,7 +1,7 @@
 <template>
     <div class="main-title" style="background-color: #31658C; justify-content: space-around">
       <p style="margin-left: 20px">Original Data</p>
-      <p style="margin-right: 20px">Cycle.465</p>
+      <p style="margin-right: 20px">Cycle No.{{selectedCycle - 1}}</p>
     </div>
     <div class="container">
       <div class="top-container">
@@ -9,7 +9,7 @@
           <div class="sub-title" style="background-color: #4f9a95">Car Info.</div>
           <div class="info">
             <div class="pic">
-              <img src="" alt="">
+              <img src="src/assets/electric-car-g987221023_1920.jpg" alt="">
             </div>
             <div class="info-detail-container border">
               <div class="info-detail" v-for="(item, index) in info" :key="index">
@@ -29,13 +29,18 @@
       </div>
       <div class="scroll-bar-container">
         <div class="title-line">
-          Time Range Select
+          <span>Time Range Select</span>
+          <span style="color: #888; font-size: 12px;">{{selectedStartTime}}~{{selectedEndTime}}</span>
         </div>
         <div class="slider">
           <el-slider v-model="rangeVal" range
                      :max="rangeMax" :min="rangeMin"
                      @input="sliderInput" :show-tooltip="false"
           ></el-slider>
+          <div class="slider-span">
+            <span style="color: #888; font-size: 12px;">{{startTime}}</span>
+            <span style="color: #888; font-size: 12px;">{{endTime}}</span>
+          </div>
         </div>
       </div>
       <div class="bottom-container border">
@@ -50,31 +55,79 @@
           <div id="rangeLine"></div>
         </div>
       </div>
+      <div id="tip-o-d"></div>
     </div>
 </template>
 
 <script setup>
   import {reactive, ref} from "@vue/reactivity";
-  import {onMounted} from "vue";
   import {lineView} from "@/components/OriginData/printView";
+  import {selectedCycleNumStore} from "@/store/selectedCycleNumStore";
+  import * as d3 from 'd3'
+  import {onMounted} from "vue";
 
-  const rangeVal = ref([5, 10])
-  const rangeMax = ref(20)
+  // 注意这里写死了100
+  const rangeVal = ref([30, 60])
+  const rangeMax = ref(100)
   const rangeMin = ref(0)
-  const sliderInput = () => {
+
+
+  const startTime = ref('')
+  const endTime = ref('')
+  const selectedStartTime = ref('')
+  const selectedEndTime = ref('')
+
+  const sliderInput = (e) => {
+    rangeVal.value = e
+    lineView(selectedCycle.value - 1, e)
+    getOriginList(selectedCycle.value - 1, e)
+  }
+
+  const info = reactive([{title: 'CarName', data: 'Trail Car'}, {title: 'Car ID', data: '476532'},
+    {title: 'Battery Num', data: '95'}, {title: 'mode', data: '1'}])
+  const vehicleStatus = reactive([{title: 'time', data: '2019/3/15'}, {title: 'curr_cycle', data: '1'},
+    {title: 'vehicle_state', data: '1'}, {title: 'charging_state', data: '3'}])
+
+  const legends = reactive([{color: '#bf7105', text: 'Total Volt'}, {color: '#4f9a95', text: 'Total Temp'}, {color: '#df4343', text: 'speed'}, {color: '#93ae74', text: 'mileage'}])
+
+  const cyclesStore = selectedCycleNumStore()
+  const selectedCycle = ref(1) // 当前选中的循环
+
+  cyclesStore.$subscribe((arg, state) => {
+    vehicleStatus[1].data = state.selectedCycleNum
+    selectedCycle.value = state.selectedCycleNum
+      lineView(selectedCycle.value - 1, rangeVal.value)
+    getOriginList(selectedCycle.value - 1)
+  })
+
+  onMounted(() => {
+    readOriginList()
+  })
+
+  const originList = reactive([])
+  const readOriginList = (() => {
+    d3.csv('src/csv/competition.csv').then((res) => {
+      originList.push(...res)
+      getOriginList()
+    })
+  })
+
+  const getOriginList = (selectedCycle = 1, e = [30, 60]) => {
+    const selectedList = []
+      // 这里直接用的100次时间周期构成的单次循环
+      for(let i = (selectedCycle - 1) * 100; i <= selectedCycle * 100; i++){
+        selectedList.push(originList[i])
+      }
+      vehicleStatus[0].data = selectedList[0].yr_modahrmn
+      vehicleStatus[2].data = selectedList[0].vehicle_state
+      vehicleStatus[3].data = selectedList[0].charging_status
+      startTime.value = selectedList[0].yr_modahrmn
+      endTime.value = selectedList[99].yr_modahrmn
+      selectedStartTime.value = selectedList[e[0]].yr_modahrmn
+      selectedEndTime.value = selectedList[e[1]].yr_modahrmn
 
   }
 
-  const info = reactive([{title: 'CarName', data: 'BYD Qin'}, {title: 'Car ID', data: '476532'},
-    {title: 'Battery Num', data: '45'}, {title: 'mode', data: 'Electric'}])
-  const vehicleStatus = reactive([{title: 'time', data: '2019/3/15'}, {title: 'curr_cycle', data: '143'},
-    {title: 'vehicle_status', data: 'Normal'}, {title: 'charging_state', data: 'DrivingCharge'}])
-
-  const legends = reactive([{color: '#bf7105', text: 'Total Volt'}, {color: '#4f9a95', text: 'Total Curr'}, {color: '#df4343', text: 'speed'}, {color: '#93ae74', text: 'mileage'}])
-
-  onMounted(() => {
-    lineView()
-  })
 </script>
 
 <style lang="scss" scoped>
@@ -99,6 +152,7 @@
     height: 378px;
     width: 100%;
     margin-top: 8px;
+    position: relative;
 
     .top-container{
       width: 100%;
@@ -119,8 +173,12 @@
           margin-top: 8px;
 
           .pic{
-            width: 140px;
-            height: 100%
+            overflow: hidden;
+            height: 86px;
+            border-radius: 4px;
+            img{
+              width: 140px;
+            }
           }
 
           .info-detail-container{
@@ -133,6 +191,7 @@
               white-space: nowrap;
               font-size: 13px;
               line-height: 19px;
+              margin-bottom: 3px;
             }
           }
         }
@@ -163,24 +222,36 @@
     .scroll-bar-container{
       width: 100%;
       height: 55px;
-      margin: 20px 0;
+      margin: 15px 0;
 
-      title-line {
+      .title-line {
         margin: 10px 0 5px 0;
+        display: flex;
+        justify-content: space-between;
+        width: 70%;
+        line-height: 20px;
       }
 
       .slider {
         display: flex;
         justify-content: center;
-        width: 80%;
-        margin-left: 10%;
-        margin-top: 3%;
+        width: 90%;
+        margin-left: 5%;
+        margin-top: -0%;
+        flex-wrap: wrap;
+
+        .slider-span{
+          width: 100%;
+          display: flex;
+          justify-content: space-between;
+          margin-top: -6px;
+        }
       }
     }
 
     .bottom-container{
       width: 96.5%;
-      height: 156px;
+      height: 160px;
       padding: 7px;
 
       .legends{
@@ -220,5 +291,18 @@
         }
       }
     }
+  }
+  #tip-o-d{
+    position: absolute;
+    margin-left: 10px;
+    margin-top: 10px;
+    line-height: 22px;
+    background-color: rgba(0, 0, 0, .6);
+    padding: 4px 9px;
+    font-size: 13px;
+    color: #fff;
+    border-radius: 3px;
+    pointer-events: none;
+    display: none;
   }
 </style>

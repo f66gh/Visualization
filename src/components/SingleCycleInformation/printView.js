@@ -1,6 +1,18 @@
 import * as d3 from "d3";
-export const singleCycle = (rectData) => {
+export const singleCycle = (rectData, aveCtb) => {
     processSOC(rectData[5])
+
+    // 因为在传数据的时候忘记传数据是对应的哪一个特征值，下面是数据对应特征编号的代码，写得非常弱智
+    const tmp = rectData
+    for(let i = 0; i < 5; i++){
+        const ave = tmp[i].aveCtb
+        if(ave === aveCtb.one) rectData[0] = tmp[i]
+        else if(ave === aveCtb.two) rectData[1] = tmp[i]
+        else if(ave === aveCtb.three) rectData[2] = tmp[i]
+        else if(ave === aveCtb.four) rectData[3] = tmp[i]
+        else if(ave === aveCtb.five) rectData[4] = tmp[i]
+    }
+
     const main = d3.select('#single-cycle')
         .attr('width', "230")
         .attr('height', "230")
