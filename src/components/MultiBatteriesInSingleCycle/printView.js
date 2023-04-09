@@ -31,11 +31,6 @@ const updateData = (singleCycle, circleData, res) => {
     })
     voltAve /= 100
 
-    console.log("aa:", currVoltList)
-    console.log("aa:", currTempList)
-
-    console.log("aaa:", tempAve, tempHigh, tempLow, voltAve, voltHigh, voltLow)
-
     const selectedBattery = selectedBatteryStore()
     selectedBattery.updateSelectedBattery(circleData.number, {
         tempAve, tempHigh, tempLow, voltAve, voltHigh, voltLow
