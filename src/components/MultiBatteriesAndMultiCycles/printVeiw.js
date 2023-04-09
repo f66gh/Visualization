@@ -103,7 +103,7 @@ export const heatView = () => {
 
     const colorScaleVolt = d3.scaleLinear()
             .domain([0, voltMaxStatus])
-            .range(['#4f9a95', '#d43030'])
+            .range(['#4f9a95', 'rgba(79,154,149,0)'])
 
         svg.selectAll('g')
             .data(voltArr)

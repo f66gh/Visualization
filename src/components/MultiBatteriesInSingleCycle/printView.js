@@ -526,7 +526,7 @@ export const violinSetView = (type, cycle) => {
 
         const yScaleArea = d3.scaleLinear()
             .domain([0, yScale.ticks(20).length])
-            .range([0, height])
+            .range([height, 0])
 
         const xScaleVio = d3.scaleLinear()
             .domain([0, batteryLen])

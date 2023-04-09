@@ -1,5 +1,5 @@
 <template>
-    <div class="main-title" style="background-color: #31658C;">Multi-Batteries & Multi-Cycles Matrix</div>
+    <div class="main-title" style="background-color: #31658c;">Multi-Batteries & Multi-Cycles Matrix</div>
     <div class="container">
       <div class="performance-line">
         <p>performance</p>
@@ -20,7 +20,7 @@
   import {onMounted} from "vue";
   import {heatView} from "@/components/MultiBatteriesAndMultiCycles/printVeiw";
 
-  const colorList = reactive(["#4f9a95", "#93ae74", "#727e7a", "#bf7105", "#df4343"])
+  const colorList = reactive(["#4f9a95", "#62a5a0", "#91c0bc", "#daeae9", "#f3f8f8"])
 
   onMounted(() => {
     heatView()
