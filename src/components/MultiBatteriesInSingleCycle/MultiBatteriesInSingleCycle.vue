@@ -33,7 +33,7 @@
       </div>
       <div class="bottom-container" style="border: none">
         <div class="single-battery border">
-          <div class="sub-title">Battery No.05</div>
+          <div class="sub-title">Battery No.{{batteryNum}}</div>
           <div class="data-text">
             <div class="single-column" v-for="(column, index) in dataColumns" :key="index">
               <div class="single-data" v-for="(data, index) in column" :key="index">{{data.title}}:{{data.data}}</div>
@@ -74,29 +74,42 @@
 
 <script setup>
   import {reactive, ref} from "@vue/reactivity";
-  import {dotView, violinView, violinSetView, lineView} from "@/components/MultiBatteriesInSingleCycle/printView";
+  import {
+    dotView,
+    violinView,
+    violinSetView,
+    lineView,
+    dealData,
+  } from "@/components/MultiBatteriesInSingleCycle/printView";
   import {onMounted} from "vue";
   import {singleCycleStore} from "@/store/singleCycleStore";
   import * as d3 from 'd3'
+  import {selectedCycleNumStore} from "@/store/selectedCycleNumStore";
+  import tempList from '@/json/tempList.json'
+  import voltList from '@/json/voltList.json'
+  import {selectedBatteryStore} from "@/store/selectedBatteryStore";
 
-  const colorList = reactive(["#4f9a95", "#93ae74", "#ebbd62", "#bf7105", "#df4343"])
-  const settingList = reactive([{title: "xAxisTemp", btnList:["Max", "Min", "Ave"]}, {title: "yAxisTemp", btnList: ["Max", "Min"]}])
+  const colorList = reactive(["#4f9a95", "#93ae74", "#727e7a", "#bf7105", "#df4343"])
+  const settingList = reactive([{title: "xAxisTemp", btnList:["Max", "Min", "Ave"]}, {title: "yAxisVolt", btnList: ["Max", "Min"]}])
   const selectedBtn = reactive([[true, false, false, false], [true, false]])
-  const violinLegends = reactive([{title: 'Temp', color: '#BF7105'}, {title: 'Volt', color: '#4f9a95'}])
-  const dataColumns = reactive([[{title: "Temp Max", data: "51.3℃"}, {title: "Current Ave", data: "214.5A"}, {title: "Current Max", data: "256.1A"}],
-    [{title: "Voltage Ave", data: "5.4v"}, {title: "Voltage Max", data: "6.0v"}, {title: "Temp Ave", data: "45.2℃"}]])
+  const violinLegends = reactive([{title: 'Temp', color: '#4f9a95'}, {title: 'Volt', color: '#BF7105'}])
+  const dataColumns = reactive([[{title: "Temp Max", data: "0"}, {title: "Temp Ave", data: "0"},
+    {title: "Temp Min", data: "0"}],
+    [{title: "Volt Max", data: "0"}, {title: "Volt Ave", data: "0"}, {title: "Volt Min", data: "0"}]])
   const cycle = ref({})
 
   const useStore = singleCycleStore()
+  const selectedCycleStore = selectedCycleNumStore()
   useStore.$subscribe((arg, state) => {
 
-    // 加一个是哪一次循环的字段
+    // 加一个是哪一次循环的字段，顺便上传了选中的循环（从1开始算的）
     d3.csv('src/csv/output7.csv').then(res => {
       for(let line of res){
         const SOH = parseFloat(line['SOH'])
 
         if(SOH === state.singleCycle[5].SOH) {
           cycle.value = line['number_of_cycles']
+          selectedCycleStore.updateSelectedCycleNum(cycle.value)
           break
         }
       }
@@ -127,17 +140,29 @@
     dotView(cycle.value, temp, volt)
   }
 
+  const selectedBattery = selectedBatteryStore()
+  const batteryNum = ref(1)
+  selectedBattery.$subscribe((arg, state) => {
+    batteryNum.value = state.selectedBattery
+    const {tempHigh, tempLow, tempAve, voltHigh, voltLow, voltAve} = state.selectedBatteryData
+    dataColumns[0][0].data = tempHigh.toFixed(1) + '℃'
+    dataColumns[0][1].data = tempAve.toFixed(1) + '℃'
+    dataColumns[0][2].data = tempLow.toFixed(1) + '℃'
+    dataColumns[1][0].data = voltHigh.toFixed(1) + 'mV'
+    dataColumns[1][1].data = voltAve.toFixed(1) + 'mV'
+    dataColumns[1][2].data = voltLow.toFixed(1) + 'mV'
+  })
+
   onMounted(() => {
-    // dotView()
-    // violinView()
-    // violinSetView('volt')
-    // violinSetView('temp')
-    // lineView()
+    dealData(tempList, voltList)
   })
 
 </script>
 
 <style lang="scss" scoped>
+::-webkit-scrollbar{
+  display: none;
+}
 .border{
   border: 1px solid #e5e5e5;
   border-radius: 3px;
@@ -343,12 +368,18 @@
       height: 100px;
       margin-top: 15px;
       width: 317px;
+      .violin{
+        overflow: auto;
+      }
     }
 
     .temperature-comparison{
       width: 317px;
       margin-top: 15px;
       height: 100px;
+      .violin{
+        overflow: auto;
+      }
     }
   }
 

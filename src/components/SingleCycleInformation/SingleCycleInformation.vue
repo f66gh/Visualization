@@ -2,7 +2,7 @@
   <div class="container">
     <div class="main-title" style="background-color: #4f9a95; justify-content: space-around">
       <div>Single Cycle Information</div>
-      <div>Cycle No.465</div>
+      <div>Cycle No.{{selectedCycle - 1}}</div>
     </div>
 
     <div class="all-batteries-status sub-container">
@@ -76,21 +76,25 @@ import {onMounted, ref} from "vue";
 import {color} from '../../assets/colorUtils'
 import {singleCycle} from "@/components/SingleCycleInformation/printView";
 import {singleCycleStore} from "@/store/singleCycleStore";
+import {selectedCycleNumStore} from "@/store/selectedCycleNumStore";
+import tempList from '@/json/tempList.json'
+import voltList from '@/json/voltList.json'
+import * as d3 from 'd3'
 
 const isCharging = ref(true)
-const batteriesTitles = reactive(["Voltage Ave", "Voltage Max", "Temp Ave", "Temp Max", "Current Ave", "Current Max"])
-const batteriesData = reactive(["5.4v", "6.0v", "45.2℃", "51.3v", "214.5A", "256.1A"])
+const batteriesTitles = reactive(["Voltage Ave", "Voltage Max", "Voltage Min", "Temp Ave", "Temp Max", "Temp Min"])
+const batteriesData = reactive(["0", "0", "0", "0", "0", "0"])
 const chargingTitles = reactive(["Charging Time", "Quick Charge Time", "Slow Charge Time"])
-const chargingData = reactive(['1442min', '120min', '1322min'])
-const warningTitles = reactive(["Battery No.02"])
-const warningData = reactive(["TEMP HIGH"])
+const chargingData = reactive(['unknown', 'unknown', 'unknown'])
+const warningTitles = reactive(["error_code"])
+const warningData = reactive(["0"])
 const leftLegends = reactive([
   {color: color.blue1, text: "Fea 3"},
   {color: color.pink1, text: "Fea 1"},
   {color: color.green1, text: "SOH"},
 ])
 const middleLegend = reactive(
-  {color: color.brown1, text: "Feature 5"}
+  {color: '#bcaba4', text: "Feature 5"}
 )
 const rightLegends = reactive([
   {color: color.purple1, text: "Fea 4"},
@@ -100,12 +104,77 @@ const rightLegends = reactive([
 
 const useStore = singleCycleStore()
 useStore.$subscribe((arg, state) => {
-
-  singleCycle(state.singleCycle)
+  singleCycle(state.singleCycle, state.aveCtb)
 })
 
-onMounted(() => {
+const selectedCycle = ref(2)
+const selectedCycleNum = selectedCycleNumStore()
 
+selectedCycleNum.$subscribe((arg, state) => {
+  selectedCycle.value = state.selectedCycleNum
+  const tempData = dealData(selectedCycle.value - 1, tempList)
+  const voltData = dealData(selectedCycle.value - 1, voltList)
+  batteriesData[0] = voltData.ave.toFixed(2)+'mV'
+  batteriesData[1] = voltData.high.toFixed(2)+'mV'
+  batteriesData[2] = voltData.low.toFixed(2)+'mV'
+  batteriesData[3] = tempData.ave.toFixed(2)+'℃'
+  batteriesData[4] = tempData.high.toFixed(2)+'℃'
+  batteriesData[5] = tempData.low.toFixed(2)+'℃'
+  getErr(csv, selectedCycle.value - 1)
+})
+
+const dealData = (selectedCycle, list) => {
+  // 第一遍读取数据，得到每一次循环所有电池的数据（平均值）
+  const cycleLen = list[0].length
+  const batteryLen = list[0][0].length
+  const dataArr = list.map((v, i) => {
+    const batteryDataList = new Array(batteryLen).fill(0)
+    v.map((va, id) => {
+      va.map((val, idx) => {
+        batteryDataList[idx] += +(val) // 这个是计算每一个电池在一次循环中的数据和
+      })
+    })
+    return batteryDataList.map(v => v / cycleLen) // 电池在这一次循环的数据列表
+  })
+
+  // 第二遍，计算每一次循环的平均值和最高最低值
+  const dataList = dataArr.map((v, i) => {
+    let sum = 0;
+    let high = 0;
+    let low = 10000;
+    v.map((va, id) => {
+      sum += va
+      if(high < va) high = va
+      else if(low > va) low = va
+    })
+    const ave = sum / batteryLen
+    return {
+      ave,
+      high,
+      low
+    }
+  })
+
+  return dataList[selectedCycle]
+}
+
+const csv = reactive([])
+const getErr = (csv, selectedCycle = 0) => {
+  warningTitles[0] = 'error_code'
+  warningData[0] = csv[selectedCycle].alarm_info
+}
+
+const getCsv = () => {
+  d3.csv('src/csv/output7.csv').then((res) => {
+    res.forEach((v) => {
+      csv.push(v)
+    })
+    getErr(csv)
+  })
+}
+
+onMounted(() => {
+  getCsv()
 })
 
 </script>

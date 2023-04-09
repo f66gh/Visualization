@@ -3,10 +3,14 @@ export const selectedCyclesStore = defineStore( {
     id: 'selectedCycles',
     state: () => {
         return {
-            selectedCycles: null,
+            selectedCycleNum: null,
+            selectedCycles: null
         }
     },
     actions: {
+        updateSelectedCycleNum(selectedCycleNum){
+            this.selectedCycleNum = selectedCycleNum
+        },
         updateSelectedCycles(selectedCycles){
             this.selectedCycles = selectedCycles
         }

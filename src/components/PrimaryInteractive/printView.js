@@ -4,6 +4,10 @@ const selectedCycle = (rectData) => {
     const useStore = singleCycleStore()
     useStore.updateSingleCycle(rectData)
 }
+const updateAve = (aveCtbAll) => {
+    const useStore = singleCycleStore()
+    useStore.updateAveCtb(aveCtbAll)
+}
 export const printView = (selectedData, leftMargin, rightMargin) => {
     //颜色
     //计算平均贡献度
@@ -194,7 +198,7 @@ export const printView = (selectedData, leftMargin, rightMargin) => {
         let dataLst = []
         //计算平均值
         const aveCtbAll = calAveCtb(data)
-
+        updateAve(aveCtbAll)
 
         const dataLen = data.length
         // const dataLen = 150

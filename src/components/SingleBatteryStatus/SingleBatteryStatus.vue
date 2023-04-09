@@ -1,13 +1,13 @@
 <template>
   <div class="main-container-ver">
-    <div class="main-title-ver" style="background-color: #4F9A95;"><p>Batteries Status</p></div>
+    <div class="main-title-ver" style="background-color: #31658c;"><p>Batteries Status</p></div>
     <div class="batteries-container" style="border: none">
       <div class="battery" v-for="(single, index) in batteries" :key="index">
-        <div class="sub-title"><p>{{single.title}}</p></div>
+        <div class="sub-title" :style="{backgroundColor: colorScale(single.status)}"><p>No.{{single.battery}}</p></div>
         <div class="info">
-          <div class="detail" v-for="(detail, id) in single.info" :key="id">
-            {{detail.text}}:{{detail.data}}
-          </div>
+          <div class="detail">vMax:{{(single.high / 1000).toFixed(2)}}V</div>
+          <div class="detail">vMin:{{(single.low/ 1000).toFixed(2)}}V</div>
+          <div class="detail">vAve:{{(single.ave/ 1000).toFixed(2)}}V</div>
         </div>
       </div>
     </div>
@@ -15,14 +15,81 @@
 </template>
 
 <script setup>
-  const batteries = [{title: "No.1", info: [{text: 'Volt', data: "4.7v"}, {text: 'Temp', data: "56℃"}, {text: 'SOC', data: '72%'}]},
-    {title: "No.2", info: [{text: 'Volt', data: "4.8v"}, {text: 'Temp', data: "48℃"}, {text: 'SOC', data: '69%'}]},
-    {title: "No.3", info: [{text: 'Volt', data: "5.7v"}, {text: 'Temp', data: "50℃"}, {text: 'SOC', data: '87%'}]},
-    {title: "No.4", info: [{text: 'Volt', data: "4.7v"}, {text: 'Temp', data: "51℃"}, {text: 'SOC', data: '85%'}]},
-    {title: "No.5", info: [{text: 'Volt', data: "4.6v"}, {text: 'Temp', data: "53℃"}, {text: 'SOC', data: '36%'}]}]
+import * as d3 from 'd3'
+import {selectedCycleNumStore} from "@/store/selectedCycleNumStore";
+import {reactive} from "@vue/reactivity";
+import voltList from '@/json/voltList.json'
+import {onMounted} from "vue";
+  const batteries = reactive([])
+  const cycleStore = selectedCycleNumStore()
+  cycleStore.$subscribe((arg, state) => {
+    dealData(state.selectedCycleNum - 1)
+  })
+
+const allData = []
+const getData = () => {
+  const batteryLen = voltList[0][0].length
+  voltList.forEach((v, i) => {
+    const dataArr = [[]] // 临时存储
+    v.forEach((va, id) => {
+      for (let n = 0; n < batteryLen; n++) {
+        if (!dataArr[n]) dataArr.push([])
+        dataArr[n].push(va[n])
+      }
+    })
+    allData.push(dataArr)
+  })
+}
+
+let statusList = []
+
+const dealData = (currSelected) => {
+    const data = allData[currSelected]
+    const dataList = data.map((v, i) => {
+      let high = 0, low =10000, ave = 0
+      v.forEach(v => {
+        v = +v
+        if(high < v) high = v
+        else if(low > v) low = v
+        ave += v
+      })
+      ave /= data.length
+      return {ave, high, low, battery: i + 1}
+    })
+  const aveList = dataList.map(v => v.ave)
+  let high = 0, low =10000, ave = 0
+  aveList.forEach(v => {
+    v = +v
+    if(high < v) high = v
+    else if(low > v) low = v
+    ave += v
+  })
+  ave /= data.length
+  statusList.splice(0, statusList.length - 1)
+  statusList = aveList.map(v => Math.abs(v - ave) / (high - low))
+  for(let i = 0; i < dataList.length; i++){
+    batteries[i] = dataList[i]
+    batteries[i].status = statusList[i]
+  }
+}
+
+const colorScale = (num) => {
+  const color = d3.scaleLinear()
+      .domain(d3.extent(statusList))
+      .range(['#4f9a95', '#df4343'])
+  return color(num)
+}
+
+onMounted(() => {
+  getData()
+  dealData(1)
+})
 </script>
 
 <style scoped lang="scss">
+::-webkit-scrollbar{
+  display: none;
+}
 .main-container-ver{
   display: flex;
   justify-content: space-between;
@@ -54,11 +121,12 @@
   height: 95%;
   display: flex;
   flex-wrap: wrap;
+  overflow: auto;
 
   .battery{
     height: 50px;
     width: 90px;
-    justify-content: space-between;
+    //justify-content: space-between;
     display: flex;
     align-items: center;
     border: 1px rgba(45, 88, 85, .5) solid;
@@ -76,6 +144,7 @@
       border-radius: 2px;
       background-color: #31658c;
       margin-left: 2px;
+      margin-right: 5px;
 
       p{
         transform: rotate(270deg);

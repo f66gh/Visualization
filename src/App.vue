@@ -49,7 +49,9 @@ components: {
 </template>
 
 <style lang="scss">
-
+::-webkit-scrollbar{
+  display: none;
+}
 .main-container {
   margin: 10px 0 0 10px;
   position: relative;

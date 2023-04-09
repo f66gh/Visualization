@@ -3,6 +3,7 @@
     <div class="container">
       <div class="performance-line">
         <p>performance</p>
+        <img src="src/assets/MM_Axis.png" alt="">
         <div class="performance">
           <div class="color" v-for="(item, index) in colorList" :key="index" :style="{backgroundColor: item}"></div>
         </div>
@@ -10,6 +11,7 @@
       <div class="view-container">
         <div id="heatView"></div>
       </div>
+      <div id="tip"></div>
     </div>
 </template>
 
@@ -18,7 +20,7 @@
   import {onMounted} from "vue";
   import {heatView} from "@/components/MultiBatteriesAndMultiCycles/printVeiw";
 
-  const colorList = reactive(["#4f9a95", "#93ae74", "#ebbd62", "#bf7105", "#df4343"])
+  const colorList = reactive(["#4f9a95", "#93ae74", "#727e7a", "#bf7105", "#df4343"])
 
   onMounted(() => {
     heatView()
@@ -38,6 +40,14 @@
       justify-content: flex-end;
       height: 15px;
       align-items: center;
+      position: relative;
+
+      img{
+        position: absolute;
+        left: -108px;
+        top: -45px;
+        transform: scale(0.5);
+      }
 
       p{
         font-size: 7px;
@@ -63,15 +73,28 @@
     .view-container{
       width: 386px;
       height: 315px;
-      margin: 0 0 0 10px;
-      overflow-y: auto;
+      margin: 10px 0 0 15px;
+      overflow: auto;
+      position: relative;
 
-      #heatView{
-        height: 1200px;
-        width: 860px;
-        margin-top: -375px;
-
+      #heatView {
+        width: 950px;
+        height: 2790px;
       }
     }
   }
+
+#tip{
+  position: absolute;
+  margin-left: 10px;
+  margin-top: 10px;
+  line-height: 22px;
+  background-color: rgba(0, 0, 0, .6);
+  padding: 4px 9px;
+  font-size: 13px;
+  color: #fff;
+  border-radius: 3px;
+  pointer-events: none;
+  display: none;
+}
 </style>
