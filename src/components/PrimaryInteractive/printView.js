@@ -48,7 +48,6 @@ export const printView = (selectedData, leftMargin, rightMargin) => {
             台阶上侧固定只放正特征值，下侧只放负特征值
         */
 
-        //如果标志为true则表示放在上侧
         if (curCtb < 0) downsideLst.push({
             curCtb,
             aveCtb
@@ -320,7 +319,7 @@ export const printView = (selectedData, leftMargin, rightMargin) => {
                 .attr("x2", endWidth));
 
         svg.append('g').call(grid)
-
+    
         svg.append('g')
             .attr('transform', `translate(0,${height-50})`)
             .call(xAxisGenerator)

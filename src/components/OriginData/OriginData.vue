@@ -1,6 +1,6 @@
 <template>
     <div class="main-title" style="background-color: #31658C; justify-content: space-around">
-      <p style="margin-left: 20px">Original Data</p>
+      <p style="margin-left: 20px">Raw Data</p>
       <p style="margin-right: 20px">Cycle No.{{selectedCycle - 1}}</p>
     </div>
     <div class="container">
