@@ -49,6 +49,7 @@ export const printView = (leftMargin, rightMargin) => {
                 errType.push(d.alarm_info)
             }
         })
+
         data.forEach(d => {
             d.SOH = +(d.SOH);
             const SOCLst = d.SOC_process.split(";")
@@ -162,9 +163,9 @@ export const printView = (leftMargin, rightMargin) => {
                 'endAngle': arcData[i].endAngle
             }
             let pathArcError;
-            //如果soh出现异常，这里设置成可以显示三种异常，两个异常在一个圈内用不同颜色表示出来
+            //如果soh出现异常，则显示在最外圈，其余异常显示在内圈
             if (soh_error_data[i] != "0") {
-                pathArcError = d3.arc().innerRadius(155).outerRadius(160)
+                pathArcError = d3.arc().innerRadius(150).outerRadius(155)
                 if (soh_error_data[i] === errType[1]) {
                     svg.append('path')
                         .attr('fill', color.pink1)
@@ -180,7 +181,7 @@ export const printView = (leftMargin, rightMargin) => {
             }
             //其他异常
             if (warning_data[i] !== "0") {
-                pathArcError = d3.arc().innerRadius(150).outerRadius(155)
+                pathArcError = d3.arc().innerRadius(155).outerRadius(160)
                 svg.append('path')
                     .attr('fill', color.brown1)
                     .attr('transform', `translate(${width/2} ${height/2})`)

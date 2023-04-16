@@ -1,6 +1,6 @@
 <template>
     <div class="main-title" style="background-color: #31658C; justify-content: space-around">
-      <p style="margin-left: 20px">Original Data</p>
+      <p style="margin-left: 20px">Raw Data</p>
       <p style="margin-right: 20px">Cycle No.{{selectedCycle - 1}}</p>
     </div>
     <div class="container">
@@ -9,7 +9,7 @@
           <div class="sub-title" style="background-color: #4f9a95">Car Info.</div>
           <div class="info">
             <div class="pic">
-              <img src="src/assets/electric-car-g987221023_1920.jpg" alt="">
+              <img src="../../assets/electric-car-g987221023_1920.jpg" alt="">
             </div>
             <div class="info-detail-container border">
               <div class="info-detail" v-for="(item, index) in info" :key="index">
@@ -94,7 +94,7 @@
   const selectedCycle = ref(1) // 当前选中的循环
 
   cyclesStore.$subscribe((arg, state) => {
-    vehicleStatus[1].data = state.selectedCycleNum
+    vehicleStatus[1].data = state.selectedCycleNum - 1
     selectedCycle.value = state.selectedCycleNum
       lineView(selectedCycle.value - 1, rangeVal.value)
     getOriginList(selectedCycle.value - 1)

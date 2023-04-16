@@ -13,6 +13,7 @@ export const singleCycle = (rectData, aveCtb) => {
         else if(ave === aveCtb.five) rectData[4] = tmp[i]
     }
 
+
     const main = d3.select('#single-cycle')
         .attr('width', "230")
         .attr('height', "230")

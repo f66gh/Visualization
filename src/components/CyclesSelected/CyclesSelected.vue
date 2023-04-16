@@ -1,7 +1,7 @@
 <template>
     <div class="container">
       <div class="SC_legend">
-        <img src="src/assets/SC_Lenged.png" alt="">
+        <img src="../../assets/SC_Lenged.png" alt="">
       </div>
         <div class="main-title" style="background-color: #31658C;"> Cycles Selected View</div>
         <div class="top">

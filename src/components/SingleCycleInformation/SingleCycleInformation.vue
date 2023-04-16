@@ -49,7 +49,7 @@
       <div id="re-charging"></div>
     </div>
 
-    <div class="legends">
+    <div class="legends" >
       <div class="single-left-container">
         <div class="single-legend-left" v-for="(item, index) in leftLegends" :key="index">
           <div class="color" :style="{backgroundColor: item.color}"></div>
