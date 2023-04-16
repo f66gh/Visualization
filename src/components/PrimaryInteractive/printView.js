@@ -1,8 +1,24 @@
 import * as d3 from "d3";
 import {singleCycleStore} from "@/store/singleCycleStore";
+// 不知道为什么利用d3封装好的on函数会传错数据，利用SOH不会传错的原理，点击rect时对一下数据传rectData
+
+let rectDataList = []
 const selectedCycle = (rectData) => {
+    let correctData;
+    for(let v of rectDataList) {
+        const tempWrong = rectData[5]
+        const tempTrue = v[5]
+        if(tempWrong.SOH === tempTrue.SOH && tempWrong.one === tempTrue.one  && tempWrong.two === tempTrue.two
+            && tempWrong.three === tempTrue.three  && tempWrong.four === tempTrue.four
+            && tempWrong.five === tempTrue.five) {
+            correctData = v
+            break;
+        }
+    }
     const useStore = singleCycleStore()
-    useStore.updateSingleCycle(rectData)
+    if(correctData) {
+        useStore.updateSingleCycle(correctData)
+    }
 }
 const updateAve = (aveCtbAll) => {
     const useStore = singleCycleStore()
@@ -168,13 +184,14 @@ export const printView = (selectedData, leftMargin, rightMargin) => {
 
     //数据处理
     const data = selectedData
+
         // const data = switchCtb(oldData)
 
         var x_value = [];
         var SOH = []; //SOH数组
         const xTicks = [] //设置条带坐标标签显示
         let errLst = [] //错误数组
-        var Y = [];
+        const Y = [];
         let maxSOH = 0
         let minSOH = 10000000
 
@@ -197,6 +214,7 @@ export const printView = (selectedData, leftMargin, rightMargin) => {
         let dataLst = []
         //计算平均值
         const aveCtbAll = calAveCtb(data)
+
         updateAve(aveCtbAll)
 
         const dataLen = data.length
@@ -243,8 +261,9 @@ export const printView = (selectedData, leftMargin, rightMargin) => {
         //新思路，可以画一次性的一个特征值，在处理后的数据中加入每一个特征值小于其序号特征值的高度和，这样就可以直接在循环中用
 
         const dataLstLen = dataLst.length
-        dataLst.forEach((d, i) => {
-
+        for(let a = 0; a < dataLstLen; a++) {
+            const i = a
+            const d = dataLst[i]
             x_value.push(dataLstLen);
             SOH.push(d.SOH);
 
@@ -254,14 +273,33 @@ export const printView = (selectedData, leftMargin, rightMargin) => {
                 sum += Math.abs(parseFloat(d.resPak[j].height))
             }
             let tempLst = []
-            for (let j = 0; j < 5; j++) {
+            // for (let z = 0; z < 5; z++) {
                 tempLst.push({
-                    ...d.resPak[j],
-                    height: Math.abs(parseFloat(d.resPak[j].height) * 50) / sum,
-                    start: Math.abs(parseFloat(d.resPak[j].start) * 50) / sum,
+                    ...d.resPak[0],
+                    height: Math.abs(parseFloat(d.resPak[0].height) * 50) / sum,
+                    start: Math.abs(parseFloat(d.resPak[0].start) * 50) / sum,
                 })
-            }
-
+            // }
+            tempLst.push({
+                ...d.resPak[1],
+                height: Math.abs(parseFloat(d.resPak[1].height) * 50) / sum,
+                start: Math.abs(parseFloat(d.resPak[1].start) * 50) / sum,
+            })
+            tempLst.push({
+                ...d.resPak[2],
+                height: Math.abs(parseFloat(d.resPak[2].height) * 50) / sum,
+                start: Math.abs(parseFloat(d.resPak[2].start) * 50) / sum,
+            })
+            tempLst.push({
+                ...d.resPak[3],
+                height: Math.abs(parseFloat(d.resPak[3].height) * 50) / sum,
+                start: Math.abs(parseFloat(d.resPak[3].start) * 50) / sum,
+            })
+            tempLst.push({
+                ...d.resPak[4],
+                height: Math.abs(parseFloat(d.resPak[4].height) * 50) / sum,
+                start: Math.abs(parseFloat(d.resPak[4].start) * 50) / sum,
+            })
             tempLst.push({
                 SOH: parseFloat(d.SOH),
                 one: +d.one,
@@ -274,7 +312,7 @@ export const printView = (selectedData, leftMargin, rightMargin) => {
                 minSOH: minSOH
             })
             Y.push(tempLst);
-        })
+        }
 
         const startWidth = 50
         const endWidth = width - 50
@@ -355,7 +393,9 @@ export const printView = (selectedData, leftMargin, rightMargin) => {
 
 
         //初始化视图要在单循环视图上绘制第一个循环
-        selectedCycle(Y[0])
+    rectDataList = []
+    const useStore = singleCycleStore()
+    useStore.updateSingleCycle(Y[0])
         g1.selectAll('rect')
             .data(Y)
             .join('rect')
@@ -370,13 +410,13 @@ export const printView = (selectedData, leftMargin, rightMargin) => {
                 }
             })
             .attr('height', (rectData) => {
+                rectDataList.push(rectData)
                 return rectData[0].height
             })
             .attr('fill', (rectData) => {
                 return colorRule(rectData[0].aveCtb)
             })
             .on('click', (dom, rectData) => {
-
                 selectedCycle(rectData)
             })
             .on('mousemove', () => {

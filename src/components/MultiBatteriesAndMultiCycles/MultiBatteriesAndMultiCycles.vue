@@ -3,7 +3,7 @@
     <div class="container">
       <div class="performance-line">
         <p>performance</p>
-        <img src="src/assets/MM_Axis.png" alt="">
+        <img src="../../assets/MM_Axis.png" alt="">
         <div class="performance">
           <div class="color" v-for="(item, index) in colorList" :key="index" :style="{backgroundColor: item}"></div>
         </div>

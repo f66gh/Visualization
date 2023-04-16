@@ -106,8 +106,9 @@
     d3.csv('src/csv/output7.csv').then(res => {
       for(let line of res){
         const SOH = parseFloat(line['SOH'])
+        const one = parseFloat(line['one'])
 
-        if(SOH === state.singleCycle[5].SOH) {
+        if(SOH === state.singleCycle[5].SOH && one === state.singleCycle[5].one) {
           cycle.value = line['number_of_cycles']
           selectedCycleStore.updateSelectedCycleNum(cycle.value)
           break
