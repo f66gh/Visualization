@@ -88,6 +88,7 @@
   import tempList from '@/json/tempList.json'
   import voltList from '@/json/voltList.json'
   import {selectedBatteryStore} from "@/store/selectedBatteryStore";
+  import output7 from  '@/json/output7.json'
 
   const colorList = reactive(["#4f9a95", "#93ae74", "#727e7a", "#bf7105", "#df4343"])
   const settingList = reactive([{title: "xAxisTemp", btnList:["Max", "Min", "Ave"]}, {title: "yAxisVolt", btnList: ["Max", "Min"]}])
@@ -103,23 +104,40 @@
   useStore.$subscribe((arg, state) => {
 
     // 加一个是哪一次循环的字段，顺便上传了选中的循环（从1开始算的）
-    d3.csv('src/csv/output7.csv').then(res => {
-      for(let line of res){
-        const SOH = parseFloat(line['SOH'])
-        const one = parseFloat(line['one'])
+  //   d3.csv('src/csv/output7.csv').then(res => {
+  //     for(let line of res){
+  //       const SOH = parseFloat(line['SOH'])
+  //       const one = parseFloat(line['one'])
+  //
+  //       if(SOH === state.singleCycle[5].SOH && one === state.singleCycle[5].one) {
+  //         cycle.value = line['number_of_cycles']
+  //         selectedCycleStore.updateSelectedCycleNum(cycle.value)
+  //         break
+  //       }
+  //     }
+  //     dotView(cycle.value, 'max', 'max')
+  //     violinView(cycle.value, 5)
+  //     violinSetView('volt', cycle.value)
+  //     violinSetView('temp', cycle.value)
+  //     lineView(cycle.value, 5)
+  //   })
+  // })
+    const res = output7
+    for(let line of res){
+      const SOH = parseFloat(line['SOH'])
+      const one = parseFloat(line['one'])
 
-        if(SOH === state.singleCycle[5].SOH && one === state.singleCycle[5].one) {
-          cycle.value = line['number_of_cycles']
-          selectedCycleStore.updateSelectedCycleNum(cycle.value)
-          break
-        }
+      if(SOH === state.singleCycle[5].SOH && one === state.singleCycle[5].one) {
+        cycle.value = line['number_of_cycles']
+        selectedCycleStore.updateSelectedCycleNum(cycle.value)
+        break
       }
-      dotView(cycle.value, 'max', 'max')
-      violinView(cycle.value, 5)
-      violinSetView('volt', cycle.value)
-      violinSetView('temp', cycle.value)
-      lineView(cycle.value, 5)
-    })
+    }
+    dotView(cycle.value, 'max', 'max')
+    violinView(cycle.value, 5)
+    violinSetView('volt', cycle.value)
+    violinSetView('temp', cycle.value)
+    lineView(cycle.value, 5)
   })
   const clickBtn = (index, id) => {
     selectedBtn[index].fill(false)

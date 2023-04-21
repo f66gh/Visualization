@@ -1,6 +1,6 @@
 import * as d3 from "d3";
 import {selectedCyclesStore} from "@/store/selectedCyclesStore";
-
+import output7 from '@/json/output7.json'
 export const printView = (leftMargin, rightMargin) => {
     //颜色
     const color = {
@@ -25,8 +25,6 @@ export const printView = (leftMargin, rightMargin) => {
         .attr('width', '100%')
         .attr('height', '100%')
         .attr('viewBox', `0 0 ${width} ${height}`)
-    const xScale1 = d3.scaleLinear();
-    const xScale2 = d3.scaleLinear();
 
     //圈数比例尺
     let angleScale = null;
@@ -36,37 +34,263 @@ export const printView = (leftMargin, rightMargin) => {
      * [{prop1: value1, prop2: value2}, {prop1: value3, prop2: value4}]
      *
      * */
-    let origin = d3.csv("src/csv/output7.csv")
-    origin.then(data => {
+    const data = output7
+    let soh_data = [];
+    let soc_data = [];
+    // let soh_error_data = [];
+    let warning_data = [];
+    // let errType = []
+    // data.forEach(d => {
+    //     if(errType.indexOf(d.alarm_info) === -1 && d.alarm_info !== "0") {
+    //         errType.push(d.alarm_info)
+    //     }
+    // })
+
+    data.forEach(d => {
+        d.SOH = +(d.SOH);
+        const SOCLst = d.SOC_process.split(";")
+        d.SOC = +SOCLst[SOCLst.length - 1];
+        const alarmList = d.alarm_info.split(";")
+        const single_warning_data = []
+        alarmList.forEach((v, i) => {
+            single_warning_data.push(v)
+        })
+        warning_data.push(single_warning_data)
+        // if(d.alarm_info !== "0"){
+        //     if(d.alarm_info === errType[0]){
+        //         warning_data.push(d.alarm_info)
+        //         soh_error_data.push("0")
+        //     }
+        //     else {
+        //         soh_error_data.push(d.alarm_info)
+        //         warning_data.push("0")
+        //     }
+        // }else{
+        //     soh_error_data.push('0');
+        //     warning_data.push('0');
+        // }
+        soh_data.push(d.SOH);
+        soc_data.push(d.SOC);
+    })
+    const pie = d3.pie().value(1);
+    const arcData = pie(data)
+    const circlePart = {
+        'startAngle': 0,
+        'endAngle': 6.28
+    };
+
+    //规定视图交互范围
+    const rangeCircle = d3.arc().innerRadius(90).outerRadius(160)
+    const rangeSvg = svg.append('path')
+        .attr('transform', `translate(${width / 2}, ${height / 2})`)
+        .attr('d', rangeCircle(circlePart))
+        .attr('fill', 'transparent')
+
+    //绘制三个大圈
+    for (let i = 1; i < 4; i++) {
+        const circlePartArc = d3.arc().innerRadius(145 + i * 5).outerRadius(145 + i * 5);
+        svg.append('path')
+            .attr('stroke', color.gray1)
+            .attr('transform', `translate(${width/2} ${height/2})`)
+            .attr('d', circlePartArc(circlePart));
+    }
+    //绘制y轴
+    const innerRadius = 90
+    const outerRadius = 150
+    const y = d3.scaleLinear()
+        .domain([d3.min(data, d => d.SOH), d3.max(data, d => d.SOH)])
+        .range([innerRadius, outerRadius])
+    const yAssistance = d3.scaleLinear()
+        .domain([d3.min(data, d => d.SOH), d3.max(data, d => d.SOH)])
+        .range([innerRadius - 15, outerRadius])
+    //带标签的坐标轴
+    const yAxis = g => g
+        .call(g => g.selectAll("g")
+            .data(y.ticks(5).reverse())
+            .join('g')
+            .attr("fill", "none")
+            .call(g => g.append("text")
+                .attr("y", d => -y(d))
+                .attr("dy", 193).attr("dx", 187)
+                .attr("stroke", color.white1)
+                .attr("stroke-width", 1)
+                .attr("font-size", 6)
+                .text((x, i) => `${x.toFixed(0)}`)
+                .clone(true)
+                .attr("y", d => y(d))
+                .selectAll(function () {
+                    return [this, this.previousSibling];
+                })
+                .clone(true)
+                .attr("fill", color.gray1)
+                .attr("stroke", "none")
+            )
+        )
+    const yAxisAssistance = g => g
+        .call(g => g.selectAll("g")
+            .data(y.ticks(15).reverse())
+            .join('g')
+            .attr("fill", "none")
+            .call(g => g.append("circle")
+                .attr("stroke", color.white1)
+                .attr("r", yAssistance)
+                .attr("cx", 190)
+                .attr("cy", 190)
+                .attr("stroke-width", 0.7)
+            )
+        )
+    svg.append("g").call(yAxisAssistance)
+    svg.append("g").call(yAxis)
+
+
+
+    const xScale3 = d3.arc().innerRadius(60).outerRadius(150)
+    // 绘制x轴
+    for (let i = 0; i < 16; i++) {
+        svg.append('path')
+            .attr('fill', 'none')
+            .attr('stroke', '#ccc')
+            .attr('transform', `translate(${width / 2}, ${height / 2})`)
+            .attr('stroke-width', .2)
+            .attr('d', xScale3({
+                'startAngle': i * 3.14 / 8,
+                'endAngle': i * 3.14 / 8 + 0.005
+            }))
+    }
+
+    //处理异常情况
+    for (let i = 0; i < soh_data.length; i++) {
+        const partError = {
+            'startAngle': arcData[i].startAngle,
+            'endAngle': arcData[i].endAngle
+        }
+        let pathArcError;
+        //如果soh出现异常，则显示在最外圈，其余异常显示在内圈
+        for(let j = 1; j < 5; j++){ //这里默认就有五个错误
+            if (warning_data[i][j] != "0") {
+                pathArcError = d3.arc().innerRadius(150).outerRadius(155)
+                if (j === 1) {
+                    svg.append('path')
+                        .attr('fill', color.pink1)
+                        .attr('transform', `translate(${width/2} ${height/2})`)
+                        .attr('d', pathArcError(partError));
+                }
+                else {
+                    svg.append('path')
+                        .attr('fill', color.pink2)
+                        .attr('transform', `translate(${width/2} ${height/2})`)
+                        .attr('d', pathArcError(partError));
+                }
+            }
+        }
+        //SOH异常
+        if (warning_data[i][0] !== "0") {
+            pathArcError = d3.arc().innerRadius(155).outerRadius(160)
+            svg.append('path')
+                .attr('fill', color.brown1)
+                .attr('transform', `translate(${width/2} ${height/2})`)
+                .attr('d', pathArcError(partError));
+        }
+    }
+
+    //SOH阈值圈
+    const radiusScaleSOH = d3.scaleLinear()
+        .domain([d3.min(data, d => d.SOH) - 2, d3.max(data, d => d.SOH) + 2])
+        .range([boundary, 150])
+    const boundaryPartArc = d3.arc().innerRadius(60).outerRadius(radiusScaleSOH(130));
+    svg.append('path')
+        .attr('fill', '#5a99c5')
+        .attr("fill-opacity", 0.2)
+        .attr('transform', `translate(${width/2} ${height/2})`)
+        .attr('d', boundaryPartArc(circlePart));
+
+    //SOC范围圈
+    const boundaryPartArcSOC = d3.arc().innerRadius(60).outerRadius(90);
+    svg.append('path')
+        .attr('fill', color.pink2)
+        .attr("fill-opacity", .7)
+        .attr('transform', `translate(${width/2} ${height/2})`)
+        .attr('d', boundaryPartArcSOC(circlePart));
+
+    //绘制SOH
+    angleScale = d3.scaleLinear().domain([0, soc_data.length - 1]).range([0, 6.28])
+    const curveSOH = d3.lineRadial()
+        .angle((d, i) => angleScale(i))
+        .radius((d, i) => radiusScaleSOH(d))
+
+    svg.append('path')
+        .datum(soh_data)
+        .attr('d', d => curveSOH(d))
+        .attr('stroke', color.green1)
+        .attr('stroke-width', 2)
+        .attr('fill', 'none')
+        .attr('transform', `translate(${width/2} ${height/2})`)
+
+    //绘制SOC
+    const radiusScale = d3.scaleLinear().domain([110, 0]).range([60, boundary])
+    const curveSOC = d3.lineRadial()
+        .angle((d, i) => angleScale(i))
+        .radius((d, i) => radiusScale(d))
+
+    svg.append('path')
+        .datum(soc_data)
+        .attr('d', d => curveSOC(d))
+        .attr('stroke', '#bf7105')
+        .attr('stroke-width', 1.5)
+        .attr('fill', 'none')
+        .attr('transform', `translate(${width/2} ${height/2})`)
+
+    //绘制开始曲线，结束曲线，预测曲线
+    let s = [0, 1.28, 5.33];
+    for (let i = 0; i < 1; i++) {
+        const part1 = {
+            'startAngle': s[i],
+            'endAngle': s[i]
+        };
+        const part1Arc = d3.arc().innerRadius(60).outerRadius(160);
+        svg.append('path')
+            .attr('stroke', color.blue1)
+            .attr('stroke-opacity', .8)
+            .attr('transform', `translate(${width/2} ${height/2})`)
+            .attr('d', part1Arc(part1));
+    }
+
+    /*origin.then(data => {
 
         let soh_data = [];
         let soc_data = [];
-        let soh_error_data = [];
+        // let soh_error_data = [];
         let warning_data = [];
-        let errType = []
-        data.forEach(d => {
-            if(errType.indexOf(d.alarm_info) === -1 && d.alarm_info !== "0") {
-                errType.push(d.alarm_info)
-            }
-        })
+        // let errType = []
+        // data.forEach(d => {
+        //     if(errType.indexOf(d.alarm_info) === -1 && d.alarm_info !== "0") {
+        //         errType.push(d.alarm_info)
+        //     }
+        // })
 
         data.forEach(d => {
             d.SOH = +(d.SOH);
             const SOCLst = d.SOC_process.split(";")
             d.SOC = +SOCLst[SOCLst.length - 1];
-            if(d.alarm_info !== "0"){
-                if(d.alarm_info === errType[0]){
-                    warning_data.push(d.alarm_info)
-                    soh_error_data.push("0")
-                }
-                else {
-                    soh_error_data.push(d.alarm_info)
-                    warning_data.push("0")
-                }
-            }else{
-                soh_error_data.push('0');
-                warning_data.push('0');
-            }
+            const alarmList = d.alarm_info.split(";")
+            const single_warning_data = []
+            alarmList.forEach((v, i) => {
+                single_warning_data.push(v)
+            })
+            warning_data.push(single_warning_data)
+            // if(d.alarm_info !== "0"){
+            //     if(d.alarm_info === errType[0]){
+            //         warning_data.push(d.alarm_info)
+            //         soh_error_data.push("0")
+            //     }
+            //     else {
+            //         soh_error_data.push(d.alarm_info)
+            //         warning_data.push("0")
+            //     }
+            // }else{
+            //     soh_error_data.push('0');
+            //     warning_data.push('0');
+            // }
             soh_data.push(d.SOH);
             soc_data.push(d.SOC);
         })
@@ -164,23 +388,25 @@ export const printView = (leftMargin, rightMargin) => {
             }
             let pathArcError;
             //如果soh出现异常，则显示在最外圈，其余异常显示在内圈
-            if (soh_error_data[i] != "0") {
-                pathArcError = d3.arc().innerRadius(150).outerRadius(155)
-                if (soh_error_data[i] === errType[1]) {
-                    svg.append('path')
-                        .attr('fill', color.pink1)
-                        .attr('transform', `translate(${width/2} ${height/2})`)
-                        .attr('d', pathArcError(partError));
-                }
-                else {
-                    svg.append('path')
-                        .attr('fill', color.pink2)
-                        .attr('transform', `translate(${width/2} ${height/2})`)
-                        .attr('d', pathArcError(partError));
+            for(let j = 1; j < 5; j++){ //这里默认就有五个错误
+                if (warning_data[i][j] != "0") {
+                    pathArcError = d3.arc().innerRadius(150).outerRadius(155)
+                    if (j === 1) {
+                        svg.append('path')
+                            .attr('fill', color.pink1)
+                            .attr('transform', `translate(${width/2} ${height/2})`)
+                            .attr('d', pathArcError(partError));
+                    }
+                    else {
+                        svg.append('path')
+                            .attr('fill', color.pink2)
+                            .attr('transform', `translate(${width/2} ${height/2})`)
+                            .attr('d', pathArcError(partError));
+                    }
                 }
             }
-            //其他异常
-            if (warning_data[i] !== "0") {
+            //SOH异常
+            if (warning_data[i][0] !== "0") {
                 pathArcError = d3.arc().innerRadius(155).outerRadius(160)
                 svg.append('path')
                     .attr('fill', color.brown1)
@@ -252,7 +478,7 @@ export const printView = (leftMargin, rightMargin) => {
         }
 
         arcsBrush(rangeSvg, svg)
-    })
+    })*/
 
     var calAngle = (clientX, clientY) => {
         const rx = clientX - width / 2
@@ -332,6 +558,8 @@ export const printView = (leftMargin, rightMargin) => {
             printRange(A - leftAngle, A + rightAngle)
         })
     }
+
+    arcsBrush(rangeSvg, svg)
 
     //2.扇形图可以拖动，边缘可以拖动
     var dragArea = (interactive, A, startA, leftBar, rightBar, partArc, leftAngle, rightAngle, partArcBar, leftDiv,
@@ -465,13 +693,19 @@ export const printView = (leftMargin, rightMargin) => {
         const rangeLeft = parseInt(angleScale.invert(left))
         const rangeRight = parseInt(angleScale.invert(right))
         const selectedData = []
-        d3.csv('src/csv/output7.csv').then((data) => {
-            for(let i = rangeLeft; i <= rangeRight; i++){
-                selectedData.push(data[i])
-            }
-            const store = selectedCyclesStore()
-            store.updateSelectedCycles(selectedData)
-        })
+        // d3.csv('src/csv/output7.csv').then((data) => {
+        //     for(let i = rangeLeft; i <= rangeRight; i++){
+        //         selectedData.push(data[i])
+        //     }
+        //     const store = selectedCyclesStore()
+        //     store.updateSelectedCycles(selectedData)
+        // })
+        const data = output7
+        for(let i = rangeLeft; i <= rangeRight; i++){
+            selectedData.push(data[i])
+        }
+        const store = selectedCyclesStore()
+        store.updateSelectedCycles(selectedData)
     }
 
     var calRange = function (partArc, calA, leftAngle, rightAngle) {

@@ -79,6 +79,7 @@ import {singleCycleStore} from "@/store/singleCycleStore";
 import {selectedCycleNumStore} from "@/store/selectedCycleNumStore";
 import tempList from '@/json/tempList.json'
 import voltList from '@/json/voltList.json'
+import output7 from '@/json/output7.json'
 import * as d3 from 'd3'
 
 const isCharging = ref(true)
@@ -120,7 +121,7 @@ selectedCycleNum.$subscribe((arg, state) => {
   batteriesData[3] = tempData.ave.toFixed(2)+'℃'
   batteriesData[4] = tempData.high.toFixed(2)+'℃'
   batteriesData[5] = tempData.low.toFixed(2)+'℃'
-  getErr(csv, selectedCycle.value - 1)
+  getErr(output7, selectedCycle.value - 1)
 })
 
 const dealData = (selectedCycle, list) => {
@@ -158,19 +159,18 @@ const dealData = (selectedCycle, list) => {
   return dataList[selectedCycle]
 }
 
-const csv = reactive([])
 const getErr = (csv, selectedCycle = 0) => {
   warningTitles[0] = 'error_code'
   warningData[0] = csv[selectedCycle].alarm_info
 }
 
 const getCsv = () => {
-  d3.csv('src/csv/output7.csv').then((res) => {
-    res.forEach((v) => {
-      csv.push(v)
-    })
-    getErr(csv)
-  })
+  // d3.csv('src/csv/output7.csv').then((res) => {
+  //   res.forEach((v) => {
+  //     csv.push(v)
+  //   })
+    getErr(output7)
+  // })
 }
 
 onMounted(() => {
