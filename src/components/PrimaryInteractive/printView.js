@@ -172,7 +172,7 @@ export const printView = (selectedData, leftMargin, rightMargin) => {
     const width = 1200;
     const upperHeight = 67;
     //设置下层尺寸
-    const height = 350;
+    const height = 380;
 
     const errSvg = main.append('svg')
         .attr('id', 'errSvg')
@@ -180,7 +180,7 @@ export const printView = (selectedData, leftMargin, rightMargin) => {
 
     //建立svg对象
     const svg = main.append('svg')
-        .attr('viewBox', `0 0 ${width} ${height}`)
+        .attr('viewBox', `0 30 ${width} ${height}`)
 
     //数据处理
     const data = selectedData
@@ -321,7 +321,9 @@ export const printView = (selectedData, leftMargin, rightMargin) => {
         const xChartData = d3.range(dataLen);
         const xRange = [50, width - 50]
         const highest = +d3.max(SOH)
-        const yChartRange = [d3.min(SOH) - 2, highest + 2];
+        const lowest = +d3.min(SOH)
+        const yRangeMargin = 0.35 * (highest - lowest)
+        const yChartRange = [lowest - yRangeMargin, highest + yRangeMargin];
         const yRange = [height - 50, 50];
         const xScale = d3.scaleBand()
             .domain(xChartData)
@@ -530,7 +532,7 @@ export const printView = (selectedData, leftMargin, rightMargin) => {
         Y.push(lastY)
         g.append('path').attr('stroke', 'black').attr('fill', 'none')
             .attr('d', pathLine(Y)) //由于曲线绘画的特性，所以把曲线输入数组末尾再加上一个相同的数据
-        //绘制错误视图，可以容纳三个错误
+        //绘制错误视图，可以容纳五个错误
         const interval = upperHeight / 7
         for(let i = 1; i < 7; i++){
             errSvg.append('line')
@@ -542,37 +544,46 @@ export const printView = (selectedData, leftMargin, rightMargin) => {
                 .attr('stoke-width', 1)
         }
 
-        const errData = data.map(v => v.alarm_info)
-        const findErr = (d) => {
-            let num = 0
-            errLst.forEach((v, i) => {
-                if(d === v) num = i + 1
+        const errData = data.map(v => v.alarm_info.split(";"))
+        const errList = []
+        for(let i = 0; i < 5; i++){
+            const tmp = []
+            errData.forEach(v => {
+                tmp.push(v[i])
             })
-            return num
+            errList.push(tmp)
         }
-        const calY = (d) => {
-            const num = findErr(d)
-            return num * interval
+        // const findErr = (d) => {
+        //     let num = 0
+        //     errLst.forEach((v, i) => {
+        //         if(d === v) num = i + 1
+        //     })
+        //     return num
+        // }
+        // const calY = (d) => {
+        //     const num = findErr(d)
+        //     return num * interval
+        // }
+        const errColor = (d, id) => {
+            if(d !== '0'){
+                if(id === 0) return "#bf7105"
+                if(id === 1) return "#ee9a9a"
+                if(id === 2) return "#bcaba4"
+                if(id === 3) return "#b29ed8"
+                if(id === 4) return "#bf7105"
+            }
+            else return 'none'
         }
-        const errColor = (d) => {
-            const num = findErr(d)
-            if(num === 0) return "none"
-            const res = num % 4
-            if(res === 0) return "#bf7105"
-            if(res === 1) return "#ee9a9a"
-            if(res === 2) return "#bcaba4"
-            if(res === 3) return "#b29ed8"
-        }
-
-        errSvg.selectAll('rect.errRect')
-            .data(errData)
-            .enter()
-            .append('rect')
-            .attr('class', 'errRect')
-            .attr('x', (d, i) => xScale(i))
-            .attr('y', d => calY(d))
-            .attr('width', (endWidth - startWidth) / dataLen + 0.4)
-            .attr('height', interval)
-            .attr('fill', d => errColor(d))
-
+        errList.forEach((v, id) => {
+            errSvg.selectAll(`rect.errRect_${id}`)
+                .data(v)
+                .enter()
+                .append('rect')
+                .attr('class', `errRect_${id}`)
+                .attr('x', (d, i) => xScale(i))
+                .attr('y', id * interval)
+                .attr('width', (endWidth - startWidth) / dataLen + 0.4)
+                .attr('height', interval)
+                .attr('fill', d => errColor(d, id))
+        })
 }

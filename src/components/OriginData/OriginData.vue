@@ -65,6 +65,7 @@
   import {selectedCycleNumStore} from "@/store/selectedCycleNumStore";
   import * as d3 from 'd3'
   import {onMounted} from "vue";
+  import competition from '@/json/competition.json'
 
   // 注意这里写死了100
   const rangeVal = ref([30, 60])
@@ -101,16 +102,16 @@
   })
 
   onMounted(() => {
-    readOriginList()
+    // readOriginList()
   })
 
-  const originList = reactive([])
-  const readOriginList = (() => {
-    d3.csv('src/csv/competition.csv').then((res) => {
-      originList.push(...res)
-      getOriginList()
-    })
-  })
+  const originList = competition
+  // const readOriginList = (() => {
+  //   d3.csv('src/csv/competition.csv').then((res) => {
+  //     originList.push(...res)
+  //     getOriginList()
+  //   })
+  // })
 
   const getOriginList = (selectedCycle = 1, e = [30, 60]) => {
     const selectedList = []
