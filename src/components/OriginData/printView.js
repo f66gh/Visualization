@@ -1,8 +1,11 @@
 import * as d3 from 'd3'
-import mileageList from '@/json/mileageList.json'
-import speedList from '@/json/speedList.json'
-import tempList from '@/json/tempList.json'
-import voltList from '@/json/voltList.json'
+import {
+    mileageList,
+    speedList,
+    tempList,
+    voltList
+} from '@/plugins/axiosInstance'
+
 export const lineView = (selectedCycle, e) => {
     // slide的input事件会在还没有读取到json的时候触发，判断一下是否已经读完json
     if(!mileageList || !speedList || !tempList || !voltList) return

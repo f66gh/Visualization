@@ -307,6 +307,8 @@ export const printView = (type, selectedData, middleLeft , middleRight, selected
         lineRangeForCycleId.push(parseInt(batteryData[lineRangeInit + i]['number_of_cycles']))
     }
 
+    const noneDisplayPadding = Math.floor(lineRangeForCycleId.length / 10) + 1 // 隐藏坐标轴标签的间隔
+
         lineMinForCycleId = parseInt(batteryData[leftBoxDomain[0][0]]['number_of_cycles'])
         lineMaxForCycleId = parseInt(batteryData[rightBoxDomain[4][1] - 1   ]['number_of_cycles'])
 
@@ -424,10 +426,14 @@ export const printView = (type, selectedData, middleLeft , middleRight, selected
 
         svgBottomAbove.select('g')
             .append('text')
+            .style('display', 'inline-block')
             .text(d => aveAve.toFixed(2))
             .attr('fill', '#fff')
             .attr('font-size', 8)
-            .attr('transform', `translate (${936 / 2 - 10} ${yScaleRect(aveAve) + 2})`)
+            .attr('transform', type === 't' ?
+                `translate (${936 / 2 - 10} ${yScaleRect(aveAve) + 2})`
+                : `translate (${936 / 2 - 13} ${yScaleRect(aveAve) + 2})`
+            )
 
         //线横坐标标签
         const cal = (i) => (xScaleLine(i * singleCycleLen) + xScaleLine((i + 1) * singleCycleLen)) / 2
@@ -441,9 +447,10 @@ export const printView = (type, selectedData, middleLeft , middleRight, selected
             .data(lineRangeForCycleId)
             .attr("width", 10)
             .attr("height", 10)
-            .attr("transform", (d, i) => `translate(${cal(i) - 15}, 10)`)
+            .attr("transform", (d, i) => `translate(${cal(i) - 10.5}, 10)`)
             .append("text")
             .text(d => `-${d}-`)
+            .attr('display', (d, i) => i % noneDisplayPadding === 0 ? 'inline-block' : 'none')
             .attr("font-size", 8)
             .attr("fill", AxisColor)
 

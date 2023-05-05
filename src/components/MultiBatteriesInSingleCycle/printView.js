@@ -1,12 +1,11 @@
 import * as d3 from "d3"
-import tempList from '@/json/tempList.json'
-import voltList from '@/json/voltList.json'
+import {tempList} from '@/plugins/axiosInstance'
 import {selectedBatteryStore} from "@/store/selectedBatteryStore";
 import {batteryListStore} from "@/store/batteryListStore";
 
 // 因为温度探针只有34个，而电池（可检测电压）总数有95个，故只展示34个电池的数据
-const batteryLen = tempList[0][0].length
-let res;
+let batteryLen;
+let res = null;
 
 const updateData = (singleCycle, circleData, res) => {
     const currTemp = res[singleCycle - 1][`battery_${circleData.number}_temp`]
@@ -37,6 +36,7 @@ const updateData = (singleCycle, circleData, res) => {
     })
 }
 export const dealData = (tempList, voltList) => {
+    if(res) return;
     const batteryLen = voltList[0][0].length
     const dataList = [{}] // 最终数据
     voltList.forEach((v, i) => {
@@ -67,6 +67,7 @@ export const dealData = (tempList, voltList) => {
         })
     })
     res = dataList
+
     const listStore = batteryListStore()
     listStore.updateBatteryVoltList(dataList)
 }
@@ -100,6 +101,7 @@ const getArr = (res, cycle, battery) => {
     }
 }
 export const dotView = (singleCycle, currTempBtn, currVoltBtn) => {
+    batteryLen = tempList[0][0].length
     const main = d3.select('#dotView');
     const width = 800;
     const height = 800;
@@ -140,6 +142,8 @@ export const dotView = (singleCycle, currTempBtn, currVoltBtn) => {
         })
     }
         const currData = res[singleCycle - 1]
+
+
 
         const strTempArr = []
         const strVoltArr = []
@@ -299,7 +303,6 @@ export const dotView = (singleCycle, currTempBtn, currVoltBtn) => {
 
 export const violinView = (cycle, battery) => {
     const width = 80
-
     const height = 55
     const margin = 5
     const offset = 5

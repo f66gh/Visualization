@@ -1,6 +1,6 @@
 import * as d3 from "d3";
 import {selectedCyclesStore} from "@/store/selectedCyclesStore";
-import output7 from '@/json/output7.json'
+import {output7} from '@/plugins/axiosInstance'
 export const printView = (leftMargin, rightMargin) => {
     //颜色
     const color = {
@@ -47,8 +47,8 @@ export const printView = (leftMargin, rightMargin) => {
     // })
 
     data.forEach(d => {
-        d.SOH = +(d.SOH);
-        const SOCLst = d.SOC_process.split(";")
+        d.SOH = +(d.soh);
+        const SOCLst = d.soc_process.split(";")
         d.SOC = +SOCLst[SOCLst.length - 1];
         const alarmList = d.alarm_info.split(";")
         const single_warning_data = []
@@ -72,6 +72,7 @@ export const printView = (leftMargin, rightMargin) => {
         soh_data.push(d.SOH);
         soc_data.push(d.SOC);
     })
+
     const pie = d3.pie().value(1);
     const arcData = pie(data)
     const circlePart = {
@@ -145,17 +146,31 @@ export const printView = (leftMargin, rightMargin) => {
 
 
     const xScale3 = d3.arc().innerRadius(60).outerRadius(150)
+    const xAxis = svg.append('svg')
+    const len = data.length
+    const calLegendAngle = (i) => {
+        const a = 3.14 / 8 * i
+        const r = width / 2 - 20
+        const x = r * Math.sin(a)
+        const y = r * Math.cos(a)
+        return `translate(${width / 2 + x - 7}, ${height / 2 - y})`
+    }
     // 绘制x轴
     for (let i = 0; i < 16; i++) {
-        svg.append('path')
+        xAxis.append('path')
             .attr('fill', 'none')
             .attr('stroke', '#ccc')
-            .attr('transform', `translate(${width / 2}, ${height / 2})`)
+            .attr('transform', (d, i) => `translate(${width / 2}, ${height / 2})`)
             .attr('stroke-width', .2)
             .attr('d', xScale3({
                 'startAngle': i * 3.14 / 8,
                 'endAngle': i * 3.14 / 8 + 0.005
             }))
+        xAxis.append('text')
+            .attr('font-size', '8px')
+            .text(i * Math.floor(len / 16))
+            .attr('transform', calLegendAngle(i))
+            .attr('fill', '#aaa')
     }
 
     //处理异常情况
@@ -234,7 +249,9 @@ export const printView = (leftMargin, rightMargin) => {
 
     svg.append('path')
         .datum(soc_data)
-        .attr('d', d => curveSOC(d))
+        .attr('d', d => {
+            return curveSOC(d)
+        })
         .attr('stroke', '#bf7105')
         .attr('stroke-width', 1.5)
         .attr('fill', 'none')
@@ -254,231 +271,6 @@ export const printView = (leftMargin, rightMargin) => {
             .attr('transform', `translate(${width/2} ${height/2})`)
             .attr('d', part1Arc(part1));
     }
-
-    /*origin.then(data => {
-
-        let soh_data = [];
-        let soc_data = [];
-        // let soh_error_data = [];
-        let warning_data = [];
-        // let errType = []
-        // data.forEach(d => {
-        //     if(errType.indexOf(d.alarm_info) === -1 && d.alarm_info !== "0") {
-        //         errType.push(d.alarm_info)
-        //     }
-        // })
-
-        data.forEach(d => {
-            d.SOH = +(d.SOH);
-            const SOCLst = d.SOC_process.split(";")
-            d.SOC = +SOCLst[SOCLst.length - 1];
-            const alarmList = d.alarm_info.split(";")
-            const single_warning_data = []
-            alarmList.forEach((v, i) => {
-                single_warning_data.push(v)
-            })
-            warning_data.push(single_warning_data)
-            // if(d.alarm_info !== "0"){
-            //     if(d.alarm_info === errType[0]){
-            //         warning_data.push(d.alarm_info)
-            //         soh_error_data.push("0")
-            //     }
-            //     else {
-            //         soh_error_data.push(d.alarm_info)
-            //         warning_data.push("0")
-            //     }
-            // }else{
-            //     soh_error_data.push('0');
-            //     warning_data.push('0');
-            // }
-            soh_data.push(d.SOH);
-            soc_data.push(d.SOC);
-        })
-        const pie = d3.pie().value(1);
-        const arcData = pie(data)
-        const circlePart = {
-            'startAngle': 0,
-            'endAngle': 6.28
-        };
-
-        //规定视图交互范围
-        const rangeCircle = d3.arc().innerRadius(90).outerRadius(160)
-        const rangeSvg = svg.append('path')
-            .attr('transform', `translate(${width / 2}, ${height / 2})`)
-            .attr('d', rangeCircle(circlePart))
-            .attr('fill', 'transparent')
-
-        //绘制三个大圈
-        for (let i = 1; i < 4; i++) {
-            const circlePartArc = d3.arc().innerRadius(145 + i * 5).outerRadius(145 + i * 5);
-            svg.append('path')
-                .attr('stroke', color.gray1)
-                .attr('transform', `translate(${width/2} ${height/2})`)
-                .attr('d', circlePartArc(circlePart));
-        }
-        //绘制y轴
-        const innerRadius = 90
-        const outerRadius = 150
-        const y = d3.scaleLinear()
-            .domain([d3.min(data, d => d.SOH), d3.max(data, d => d.SOH)])
-            .range([innerRadius, outerRadius])
-        const yAssistance = d3.scaleLinear()
-            .domain([d3.min(data, d => d.SOH), d3.max(data, d => d.SOH)])
-            .range([innerRadius - 15, outerRadius])
-        //带标签的坐标轴
-        const yAxis = g => g
-            .call(g => g.selectAll("g")
-                .data(y.ticks(5).reverse())
-                .join('g')
-                .attr("fill", "none")
-                .call(g => g.append("text")
-                    .attr("y", d => -y(d))
-                    .attr("dy", 193).attr("dx", 187)
-                    .attr("stroke", color.white1)
-                    .attr("stroke-width", 1)
-                    .attr("font-size", 6)
-                    .text((x, i) => `${x.toFixed(0)}`)
-                    .clone(true)
-                    .attr("y", d => y(d))
-                    .selectAll(function () {
-                        return [this, this.previousSibling];
-                    })
-                    .clone(true)
-                    .attr("fill", color.gray1)
-                    .attr("stroke", "none")
-                )
-            )
-        const yAxisAssistance = g => g
-            .call(g => g.selectAll("g")
-                .data(y.ticks(15).reverse())
-                .join('g')
-                .attr("fill", "none")
-                .call(g => g.append("circle")
-                    .attr("stroke", color.white1)
-                    .attr("r", yAssistance)
-                    .attr("cx", 190)
-                    .attr("cy", 190)
-                    .attr("stroke-width", 0.7)
-                )
-            )
-        svg.append("g").call(yAxisAssistance)
-        svg.append("g").call(yAxis)
-
-
-
-        const xScale3 = d3.arc().innerRadius(60).outerRadius(150)
-        // 绘制x轴
-        for (let i = 0; i < 16; i++) {
-            svg.append('path')
-                .attr('fill', 'none')
-                .attr('stroke', '#ccc')
-                .attr('transform', `translate(${width / 2}, ${height / 2})`)
-                .attr('stroke-width', .2)
-                .attr('d', xScale3({
-                    'startAngle': i * 3.14 / 8,
-                    'endAngle': i * 3.14 / 8 + 0.005
-                }))
-        }
-
-        //处理异常情况
-        for (let i = 0; i < soh_data.length; i++) {
-            const partError = {
-                'startAngle': arcData[i].startAngle,
-                'endAngle': arcData[i].endAngle
-            }
-            let pathArcError;
-            //如果soh出现异常，则显示在最外圈，其余异常显示在内圈
-            for(let j = 1; j < 5; j++){ //这里默认就有五个错误
-                if (warning_data[i][j] != "0") {
-                    pathArcError = d3.arc().innerRadius(150).outerRadius(155)
-                    if (j === 1) {
-                        svg.append('path')
-                            .attr('fill', color.pink1)
-                            .attr('transform', `translate(${width/2} ${height/2})`)
-                            .attr('d', pathArcError(partError));
-                    }
-                    else {
-                        svg.append('path')
-                            .attr('fill', color.pink2)
-                            .attr('transform', `translate(${width/2} ${height/2})`)
-                            .attr('d', pathArcError(partError));
-                    }
-                }
-            }
-            //SOH异常
-            if (warning_data[i][0] !== "0") {
-                pathArcError = d3.arc().innerRadius(155).outerRadius(160)
-                svg.append('path')
-                    .attr('fill', color.brown1)
-                    .attr('transform', `translate(${width/2} ${height/2})`)
-                    .attr('d', pathArcError(partError));
-            }
-        }
-
-        //SOH阈值圈
-        const radiusScaleSOH = d3.scaleLinear()
-            .domain([d3.min(data, d => d.SOH) - 2, d3.max(data, d => d.SOH) + 2])
-            .range([boundary, 150])
-        const boundaryPartArc = d3.arc().innerRadius(60).outerRadius(radiusScaleSOH(130));
-        svg.append('path')
-            .attr('fill', '#5a99c5')
-            .attr("fill-opacity", 0.2)
-            .attr('transform', `translate(${width/2} ${height/2})`)
-            .attr('d', boundaryPartArc(circlePart));
-
-        //SOC范围圈
-        const boundaryPartArcSOC = d3.arc().innerRadius(60).outerRadius(90);
-        svg.append('path')
-            .attr('fill', color.pink2)
-            .attr("fill-opacity", .7)
-            .attr('transform', `translate(${width/2} ${height/2})`)
-            .attr('d', boundaryPartArcSOC(circlePart));
-
-        //绘制SOH
-        angleScale = d3.scaleLinear().domain([0, soc_data.length - 1]).range([0, 6.28])
-        const curveSOH = d3.lineRadial()
-            .angle((d, i) => angleScale(i))
-            .radius((d, i) => radiusScaleSOH(d))
-
-        svg.append('path')
-            .datum(soh_data)
-            .attr('d', d => curveSOH(d))
-            .attr('stroke', color.green1)
-            .attr('stroke-width', 2)
-            .attr('fill', 'none')
-            .attr('transform', `translate(${width/2} ${height/2})`)
-
-        //绘制SOC
-        const radiusScale = d3.scaleLinear().domain([110, 0]).range([60, boundary])
-        const curveSOC = d3.lineRadial()
-            .angle((d, i) => angleScale(i))
-            .radius((d, i) => radiusScale(d))
-
-        svg.append('path')
-            .datum(soc_data)
-            .attr('d', d => curveSOC(d))
-            .attr('stroke', '#bf7105')
-            .attr('stroke-width', 1.5)
-            .attr('fill', 'none')
-            .attr('transform', `translate(${width/2} ${height/2})`)
-
-        //绘制开始曲线，结束曲线，预测曲线
-        let s = [0, 1.28, 5.33];
-        for (let i = 0; i < 1; i++) {
-            const part1 = {
-                'startAngle': s[i],
-                'endAngle': s[i]
-            };
-            const part1Arc = d3.arc().innerRadius(60).outerRadius(160);
-            svg.append('path')
-                .attr('stroke', color.blue1)
-                .attr('stroke-opacity', .8)
-                .attr('transform', `translate(${width/2} ${height/2})`)
-                .attr('d', part1Arc(part1));
-        }
-
-        arcsBrush(rangeSvg, svg)
-    })*/
 
     var calAngle = (clientX, clientY) => {
         const rx = clientX - width / 2

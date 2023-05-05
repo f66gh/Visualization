@@ -1,6 +1,6 @@
 import * as d3 from 'd3'
 // import tempList from '@/json/tempList.json'
-import voltList from '@/json/voltList.json'
+import {voltList} from '@/plugins/axiosInstance'
 import {batteryListStore} from "@/store/batteryListStore";
 const dealData = (list) => {
     // 第一遍读取数据，得到每一次循环所有电池的数据（平均值）

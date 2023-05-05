@@ -65,9 +65,10 @@ import {onMounted, ref} from "vue";
 import {selectedCyclesStore} from "@/store/selectedCyclesStore";
 import * as d3 from "d3";
 import Tools from "@/tools";
-import voltList from '@/json/voltList.json'
-import tempList from '@/json/tempList.json'
+import {voltList, tempList} from '@/plugins/axiosInstance'
 import {reactive} from "@vue/reactivity";
+import {connectionStatusStore} from "@/store/connectionStatusStore";
+const connectionStore = connectionStatusStore()
 
 const selectedBattery = ref(1)
 const rangeVal = ref([0, 0])
@@ -147,7 +148,7 @@ const dealData = (tempList, voltList) => {
   return dataList
 }
 
-onMounted(() => {
+connectionStore.$subscribe(() => {
 
    dealData(tempList, voltList).forEach((v) => {
      dataList.push(v)

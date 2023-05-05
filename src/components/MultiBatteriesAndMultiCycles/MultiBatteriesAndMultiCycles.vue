@@ -19,10 +19,12 @@
   import {reactive} from "@vue/reactivity";
   import {onMounted} from "vue";
   import {heatView} from "@/components/MultiBatteriesAndMultiCycles/printVeiw";
+  import {connectionStatusStore} from "@/store/connectionStatusStore";
+  const connectionStore = connectionStatusStore()
 
   const colorList = reactive(["#4f9a95", "#62a5a0", "#91c0bc", "#daeae9", "#f3f8f8"])
 
-  onMounted(() => {
+  connectionStore.$subscribe(() => {
     heatView()
   })
 </script>

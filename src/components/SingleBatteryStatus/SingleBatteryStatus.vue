@@ -18,8 +18,11 @@
 import * as d3 from 'd3'
 import {selectedCycleNumStore} from "@/store/selectedCycleNumStore";
 import {reactive} from "@vue/reactivity";
-import voltList from '@/json/voltList.json'
+import {voltList} from '@/plugins/axiosInstance'
 import {onMounted} from "vue";
+import {connectionStatusStore} from "@/store/connectionStatusStore";
+const connectionStore = connectionStatusStore()
+
   const batteries = reactive([])
   const cycleStore = selectedCycleNumStore()
   cycleStore.$subscribe((arg, state) => {
@@ -44,6 +47,8 @@ const getData = () => {
 let statusList = []
 
 const dealData = (currSelected) => {
+  if(allData.length === 0) return;
+
     const data = allData[currSelected]
     const dataList = data.map((v, i) => {
       let high = 0, low =10000, ave = 0
@@ -80,7 +85,7 @@ const colorScale = (num) => {
   return color(num)
 }
 
-onMounted(() => {
+connectionStore.$subscribe(() => {
   getData()
   dealData(1)
 })

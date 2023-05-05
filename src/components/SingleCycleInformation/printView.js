@@ -1,17 +1,17 @@
 import * as d3 from "d3";
 export const singleCycle = (rectData, aveCtb) => {
-    processSOC(rectData[5])
+    processSOC(rectData.val)
 
     // 因为在传数据的时候忘记传数据是对应的哪一个特征值，下面是数据对应特征编号的代码，写得非常弱智
-    const tmp = rectData
-    for(let i = 0; i < 5; i++){
-        const ave = tmp[i].aveCtb
-        if(ave === aveCtb.one) rectData[0] = tmp[i]
-        else if(ave === aveCtb.two) rectData[1] = tmp[i]
-        else if(ave === aveCtb.three) rectData[2] = tmp[i]
-        else if(ave === aveCtb.four) rectData[3] = tmp[i]
-        else if(ave === aveCtb.five) rectData[4] = tmp[i]
-    }
+    // const tmp = rectData
+    // for(let i = 0; i < 5; i++){
+    //     const ave = tmp[i].aveCtb
+    //     if(ave === aveCtb.one) rectData[0] = tmp[i]
+    //     else if(ave === aveCtb.two) rectData[1] = tmp[i]
+    //     else if(ave === aveCtb.three) rectData[2] = tmp[i]
+    //     else if(ave === aveCtb.four) rectData[3] = tmp[i]
+    //     else if(ave === aveCtb.five) rectData[4] = tmp[i]
+    // }
 
 
     const main = d3.select('#single-cycle')
@@ -32,10 +32,10 @@ export const singleCycle = (rectData, aveCtb) => {
     const innerRadInside = 20
     const middleCircle = 15
 
-    const SOHScale = d3.scaleLinear().domain([rectData[5].minSOH, rectData[5].maxSOH]).range([0, 100])
-    const currSOCArr = rectData[5].SOC.split(";")
+    const SOHScale = d3.scaleLinear().domain([rectData.val.minSOH, rectData.val.maxSOH]).range([0, 100])
+    const currSOCArr = rectData.val.SOC.split(";")
     const currSOC = +currSOCArr[currSOCArr.length - 1]
-    const soc_soh = [100 - currSOC, currSOC, SOHScale(rectData[5].SOH), 100 - SOHScale(rectData[5].SOH)];
+    const soc_soh = [100 - currSOC, currSOC, SOHScale(rectData.val.SOH), 100 - SOHScale(rectData.val.SOH)];
 
     const xScale = d3.scaleLinear();
     for (var x = 0; x < 4; x++) {
@@ -63,17 +63,17 @@ export const singleCycle = (rectData, aveCtb) => {
     //保存特征值对应的半径值
     var value2 = [];
 
-    const ctbKeys = Object.keys(rectData[5])
+    const ctbKeys = Object.keys(rectData.val)
 
     for (let key of ctbKeys) {
         if (key !== "maxSOH" && key !== "SOC" && key !== "SOH" && key !== "minSOH") {
-            const d = rectData[5][key]
+            const d = rectData.val[key]
             value1.push(d)
             absValue.push(Math.abs(d))
         }
     }
-    for (let i = 0; i < 5; i++) {
-        const d = rectData[i].aveCtb
+    for (let item in rectData.ave) {
+        const d = rectData.ave[item]
         averageValue.push(d)
         averageValueAbs.push(Math.abs(d))
     }
@@ -83,7 +83,14 @@ export const singleCycle = (rectData, aveCtb) => {
 
 
     //计算每一个特征值应有的半径，用线性比例尺来做
-    xScale.domain(d3.extent(absValue)).range([innerRadInside, innerRadOutside]);
+    const domainRange = (absValue) => {
+        const list = absValue
+        list.sort((a, b) => b - a)
+        const domain = list[0] - list[list.length - 1]
+        const padding = domain / 10
+        return [list[list.length - 1] - padding, list[0] + padding]
+    }
+    xScale.domain(domainRange(absValue)).range([innerRadInside, innerRadOutside]);
 
     for (var i = 0; i < value1.length; i++) {
         value2.push(xScale(absValue[i]));
@@ -254,6 +261,7 @@ const processSOC = (data) => {
     main.select('svg').remove()
     const svg = main.append('svg')
         .attr('viewBox', `0 0 ${width} ${height}`)
+
 
     const SOC_arr_str = data.SOC.split(';').slice(0, -1)
     const SOC_arr = SOC_arr_str.map(v => {

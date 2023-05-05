@@ -77,10 +77,10 @@ import {color} from '../../assets/colorUtils'
 import {singleCycle} from "@/components/SingleCycleInformation/printView";
 import {singleCycleStore} from "@/store/singleCycleStore";
 import {selectedCycleNumStore} from "@/store/selectedCycleNumStore";
-import tempList from '@/json/tempList.json'
-import voltList from '@/json/voltList.json'
-import output7 from '@/json/output7.json'
+import {tempList, voltList, output7} from '@/plugins/axiosInstance'
 import * as d3 from 'd3'
+import {connectionStatusStore} from "@/store/connectionStatusStore";
+const connectionStore = connectionStatusStore()
 
 const isCharging = ref(true)
 const batteriesTitles = reactive(["Voltage Ave", "Voltage Max", "Voltage Min", "Temp Ave", "Temp Max", "Temp Min"])
@@ -90,17 +90,17 @@ const chargingData = reactive(['unknown', 'unknown', 'unknown'])
 const warningTitles = reactive(["error_code"])
 const warningData = reactive(["0"])
 const leftLegends = reactive([
-  {color: color.blue1, text: "Fea 3"},
-  {color: color.pink1, text: "Fea 1"},
-  {color: color.green1, text: "SOH"},
+  {color: '#b29ed8', text: "Ma_T"},
+  {color: '#ebbd62', text: "Mi_T"},
+  {color: '#ee9a9a', text: "Ama_T"},
 ])
 const middleLegend = reactive(
-  {color: '#bcaba4', text: "Feature 5"}
+  {color: '#bcaba4', text: "Ami_T"}
 )
 const rightLegends = reactive([
-  {color: color.purple1, text: "Fea 4"},
-  {color: color.yellow1, text: "Fea 2"},
-  {color: color.mainGreen, text: "SOC"}
+  {color: '#5a99c5', text: "Ma_T"},
+  {color: '#4f9a95', text: "SOH"},
+  {color: '#93ae74', text: "SOC"}
 ])
 
 const useStore = singleCycleStore()
@@ -173,7 +173,7 @@ const getCsv = () => {
   // })
 }
 
-onMounted(() => {
+connectionStore.$subscribe(() => {
   getCsv()
 })
 

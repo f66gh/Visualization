@@ -81,14 +81,12 @@
     lineView,
     dealData,
   } from "@/components/MultiBatteriesInSingleCycle/printView";
-  import {onMounted} from "vue";
   import {singleCycleStore} from "@/store/singleCycleStore";
-  import * as d3 from 'd3'
   import {selectedCycleNumStore} from "@/store/selectedCycleNumStore";
-  import tempList from '@/json/tempList.json'
-  import voltList from '@/json/voltList.json'
+  import {tempList, output7, voltList} from '@/plugins/axiosInstance'
   import {selectedBatteryStore} from "@/store/selectedBatteryStore";
-  import output7 from  '@/json/output7.json'
+  import {connectionStatusStore} from "@/store/connectionStatusStore";
+  const connectionStore = connectionStatusStore()
 
   const colorList = reactive(["#4f9a95", "#93ae74", "#727e7a", "#bf7105", "#df4343"])
   const settingList = reactive([{title: "xAxisTemp", btnList:["Max", "Min", "Ave"]}, {title: "yAxisVolt", btnList: ["Max", "Min"]}])
@@ -103,46 +101,32 @@
   const selectedCycleStore = selectedCycleNumStore()
   useStore.$subscribe((arg, state) => {
 
-    // 加一个是哪一次循环的字段，顺便上传了选中的循环（从1开始算的）
-  //   d3.csv('src/csv/output7.csv').then(res => {
-  //     for(let line of res){
-  //       const SOH = parseFloat(line['SOH'])
-  //       const one = parseFloat(line['one'])
-  //
-  //       if(SOH === state.singleCycle[5].SOH && one === state.singleCycle[5].one) {
-  //         cycle.value = line['number_of_cycles']
-  //         selectedCycleStore.updateSelectedCycleNum(cycle.value)
-  //         break
-  //       }
-  //     }
-  //     dotView(cycle.value, 'max', 'max')
-  //     violinView(cycle.value, 5)
-  //     violinSetView('volt', cycle.value)
-  //     violinSetView('temp', cycle.value)
-  //     lineView(cycle.value, 5)
-  //   })
-  // })
     const res = output7
     for(let line of res){
-      const SOH = parseFloat(line['SOH'])
+      const SOH = parseFloat(line['soh'])
       const one = parseFloat(line['one'])
 
-      if(SOH === state.singleCycle[5].SOH && one === state.singleCycle[5].one) {
+      if(SOH === state.singleCycle.val.SOH && one === state.singleCycle.val.one) {
         cycle.value = line['number_of_cycles']
         selectedCycleStore.updateSelectedCycleNum(cycle.value)
         break
       }
     }
+    clickBtn(0, 0, true)
+    clickBtn(1, 0, true)
+    dealData(tempList, voltList)
     dotView(cycle.value, 'max', 'max')
     violinView(cycle.value, 5)
     violinSetView('volt', cycle.value)
     violinSetView('temp', cycle.value)
     lineView(cycle.value, 5)
   })
-  const clickBtn = (index, id) => {
+  const clickBtn = (index, id, update = false) => {
     selectedBtn[index].fill(false)
     selectedBtn[index][id] = true
-    switchAxis(index, id)
+    if(!update){
+      switchAxis(index, id)
+    }
   }
 
   const switchAxis = (index, id) => {
@@ -170,10 +154,6 @@
     dataColumns[1][0].data = voltHigh.toFixed(1) + 'mV'
     dataColumns[1][1].data = voltAve.toFixed(1) + 'mV'
     dataColumns[1][2].data = voltLow.toFixed(1) + 'mV'
-  })
-
-  onMounted(() => {
-    dealData(tempList, voltList)
   })
 
 </script>
