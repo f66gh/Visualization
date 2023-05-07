@@ -1,7 +1,6 @@
 import * as d3 from "d3";
 export const singleCycle = (rectData, aveCtb) => {
     processSOC(rectData.val)
-
     // 因为在传数据的时候忘记传数据是对应的哪一个特征值，下面是数据对应特征编号的代码，写得非常弱智
     // const tmp = rectData
     // for(let i = 0; i < 5; i++){
@@ -28,7 +27,7 @@ export const singleCycle = (rectData, aveCtb) => {
     const soc_soh_color = ['#d9efed', '#4f9a95', '#93ae74', '#edf7e4'];
     const outerRadOutside = 115
     const outerRadInside = 100
-    const innerRadOutside = 90
+    const innerRadOutside = 95
     const innerRadInside = 20
     const middleCircle = 15
 
@@ -84,14 +83,13 @@ export const singleCycle = (rectData, aveCtb) => {
 
     //计算每一个特征值应有的半径，用线性比例尺来做
     const domainRange = (absValue) => {
-        const list = absValue
+        const list = [...absValue]
         list.sort((a, b) => b - a)
         const domain = list[0] - list[list.length - 1]
         const padding = domain / 10
         return [list[list.length - 1] - padding, list[0] + padding]
     }
     xScale.domain(domainRange(absValue)).range([innerRadInside, innerRadOutside]);
-
     for (var i = 0; i < value1.length; i++) {
         value2.push(xScale(absValue[i]));
     }
@@ -123,18 +121,18 @@ export const singleCycle = (rectData, aveCtb) => {
     //带标签的坐标轴
     const yAxis = g => g
         .call(g => g.selectAll("g")
-            .data(y.ticks(5).reverse())
+            .data(xScale.ticks(5).reverse())
             .join('g')
             .attr("fill", "none")
             .call(g => g.append("text")
-                .attr("y", d => -y(d))
+                .attr("y", d => -xScale(d))
                 .attr("dy", width / 2).attr("dx", width / 2)
                 .attr("stroke", "white")
                 .attr("stroke-width", 1)
                 .attr("font-size", 6)
-                .text((x, i) => `${x.toFixed(1)}`)
+                .text((x, i) => `${x.toFixed(2)}`)
                 .clone(true)
-                .attr("y", d => y(d))
+                .attr("y", d => xScale(d))
                 .selectAll(function () {
                     return [this, this.previousSibling];
                 })
@@ -164,13 +162,27 @@ export const singleCycle = (rectData, aveCtb) => {
             'endAngle': arcData[i].endAngle
         }
         const pathArc = d3.arc().innerRadius(innerRadInside).outerRadius(value2[i]);
-
+        const tip = d3.select('#tip')
         //绘制特征值的代码
         svg.append('path')
+            .datum({ave: averageValue[i],val: value1[i]})
             .attr('stroke', 'white')
             .attr('fill', color1[i])
             .attr('transform', `translate(${width/2} ${height/2})`)
-            .attr('d', pathArc(part));
+            .attr('d', pathArc(part))
+            .on("mousemove", ({clientX, clientY}, rectData) => {
+                console.log("rectData:", rectData)
+            tip.style('display', 'block')
+                .style('left', `${clientX + window.scrollX - 1380}px`)
+                .style('top', `${clientY + window.scrollY - 560}px`)
+                .html(`
+                            <div>SHAP:${rectData.val.toFixed(3)}</div>
+                            <div>aveSHAP:${rectData.ave.toFixed(3)}</div>
+                        `)
+        })
+            .on('mouseout', () => {
+                tip.style('display', 'none')
+            })
 
         //处理特征值为负的情况
         if (value1[i] < 0) {
@@ -182,7 +194,8 @@ export const singleCycle = (rectData, aveCtb) => {
                 .attr('stroke', 'white')
                 .attr('fill', '#698375')
                 .attr('transform', `translate(${width/2} ${height/2})`)
-                .attr('d', pathArc(part2));
+                .attr('d', pathArc(part2))
+
         }
 
         // 绘制平均值的代码
@@ -190,7 +203,7 @@ export const singleCycle = (rectData, aveCtb) => {
             'startAngle': arcData[i].startAngle,
             'endAngle': arcData[i].endAngle
         }
-        var pathArc3 = d3.arc().innerRadius(innerRadOutside + 5).outerRadius(innerRadOutside + 15);
+        var pathArc3 = d3.arc().innerRadius(innerRadOutside).outerRadius(innerRadOutside + 10);
         if (averageValueAbs[i] < max) {
             pathArc3 = d3.arc().innerRadius(xScale(averageValueAbs[i]) - 5).outerRadius(xScale(
                 averageValueAbs[i]));
@@ -201,7 +214,20 @@ export const singleCycle = (rectData, aveCtb) => {
         svg.append('path')
             .attr('fill', color2[i])
             .attr('transform', `translate(${width/2} ${height/2})`)
-            .attr('d', pathArc3(part3));
+            .attr('d', pathArc3(part3))
+            .on("mousemove", ({clientX, clientY}, rectData) => {
+                console.log("rectData:", rectData)
+                tip.style('display', 'block')
+                    .style('left', `${clientX + window.scrollX - 1380}px`)
+                    .style('top', `${clientY + window.scrollY - 560}px`)
+                    .html(`
+                            <div>SHAP:${rectData.val.toFixed(3)}</div>
+                            <div>aveSHAP:${rectData.ave.toFixed(3)}</div>
+                        `)
+            })
+            .on('mouseout', () => {
+                tip.style('display', 'none')
+            })
         // if (averageValueAbs[i] > max) {
         //     var pathArc4 = d3.arc().innerRadius(innerRadOutside + 5).outerRadius(innerRadOutside + 15);
         //     svg.append('path')

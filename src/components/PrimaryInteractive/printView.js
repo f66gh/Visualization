@@ -215,7 +215,7 @@ export const printView = (selectedData, leftMargin, rightMargin) => {
         // const dataLen = 150
         let lastSOH = data[0].SOH
         //每一次循环针对一次动力电池循环
-        for (let i = 1; i < dataLen; i++) {
+        for (let i = 0; i < dataLen; i++) {
             let d = data[i]
             let upsideLst = []
             let downsideLst = []
@@ -292,7 +292,7 @@ export const printView = (selectedData, leftMargin, rightMargin) => {
         const endWidth = width - 50
         const startHeight = 50
         const endHeight = height - 50
-        const xChartData = d3.range(dataLen);
+        const xChartData = d3.range(dataLen + 1);
         const xRange = [50, width - 50]
         const highest = +d3.max(SOH)
         const lowest = +d3.min(SOH)
@@ -504,6 +504,7 @@ export const printView = (selectedData, leftMargin, rightMargin) => {
             .curve(d3.curveStepAfter)
         const lastY = Y[Y.length - 1]
         Y.push(lastY)
+        console.log("Y:",Y)
         g.append('path').attr('stroke', 'black').attr('fill', 'none')
             .attr('d', pathLine(Y)) //由于曲线绘画的特性，所以把曲线输入数组末尾再加上一个相同的数据
         //绘制错误视图，可以容纳五个错误

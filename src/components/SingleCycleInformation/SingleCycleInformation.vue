@@ -2,7 +2,7 @@
   <div class="container">
     <div class="main-title" style="background-color: #4f9a95; justify-content: space-around">
       <div>Single Cycle Information</div>
-      <div>Cycle No.{{selectedCycle - 1}}</div>
+      <div>Cycle No.{{selectedCycle}}</div>
     </div>
 
     <div class="all-batteries-status sub-container">
@@ -95,10 +95,10 @@ const leftLegends = reactive([
   {color: '#ee9a9a', text: "Ama_T"},
 ])
 const middleLegend = reactive(
-  {color: '#bcaba4', text: "Ami_T"}
+  {color: '#bcaba4', text: "Amili"}
 )
 const rightLegends = reactive([
-  {color: '#5a99c5', text: "Ma_T"},
+  {color: '#5a99c5', text: "Asoc"},
   {color: '#4f9a95', text: "SOH"},
   {color: '#93ae74', text: "SOC"}
 ])
@@ -314,5 +314,19 @@ connectionStore.$subscribe(() => {
       }
     }
   }
+}
+
+#tip{
+  position: absolute;
+  margin-left: 10px;
+  margin-top: 10px;
+  line-height: 22px;
+  background-color: rgba(0, 0, 0, .6);
+  padding: 4px 9px;
+  font-size: 13px;
+  color: #fff;
+  border-radius: 3px;
+  pointer-events: none;
+  display: none;
 }
 </style>

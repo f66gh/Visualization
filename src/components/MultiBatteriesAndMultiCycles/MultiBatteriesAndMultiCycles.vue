@@ -80,7 +80,7 @@
       position: relative;
 
       #heatView {
-        width: 950px;
+        width: 380px;
         height: 2790px;
       }
     }

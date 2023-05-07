@@ -6,8 +6,8 @@ import { ElMessage } from 'element-plus'
 import {connectionStatusStore} from "@/store/connectionStatusStore";
 import store from '@/store/index.js'
 
-// const url = 'http://localhost:8081'
-const url = 'http://8.130.111.45:8081/'
+const url = 'http://localhost:8081'
+// const url = 'http://8.130.111.45:8081/'
 
 //使用axios下面的create([config])方法创建axios实例，其中config参数为axios最基本的配置信息。
 const $http = axios.create({
@@ -17,7 +17,6 @@ const $http = axios.create({
 
 const loadingOptions = {
     lock: true,
-    background: 'rgba(255,255,255,.6)',
     text: "Be patient if it is a initial loading."
 }
 
@@ -48,6 +47,7 @@ export const getAll = () => {
             statusStore.updateConnectionStatus(true)
         })
         .catch((err) => {
+            console.log("err:", err)
             ElMessage({
                 message: 'Loading failure, please check your connection.',
                 type: 'error'

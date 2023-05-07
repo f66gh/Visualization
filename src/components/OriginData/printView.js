@@ -7,6 +7,7 @@ import {
 } from '@/plugins/axiosInstance'
 
 export const lineView = (selectedCycle, e) => {
+    console.log("selectedCycle:", selectedCycle)
     // slide的input事件会在还没有读取到json的时候触发，判断一下是否已经读完json
     if(!mileageList || !speedList || !tempList || !voltList) return
     const main = d3.select('#rangeLine');
@@ -23,8 +24,8 @@ export const lineView = (selectedCycle, e) => {
     const tip = d3.select('#tip-o-d')
 
     // 当前选中循环的所有电压和温度以及行驶里程和速度
-    const currTempList = tempList[selectedCycle - 1]
-    const currVoltList = voltList[selectedCycle - 1]
+    const currTempList = tempList[selectedCycle]
+    const currVoltList = voltList[selectedCycle]
     const len = e[1] - e[0]
 
         let currTempArr = currTempList.map(v => {
@@ -38,8 +39,8 @@ export const lineView = (selectedCycle, e) => {
             return sum / len
         })
 
-    let currSpeedArr = speedList[selectedCycle - 1]
-    let currMileageArr = mileageList[selectedCycle - 1]
+    let currSpeedArr = speedList[selectedCycle]
+    let currMileageArr = mileageList[selectedCycle]
 
 
     if(e) {
