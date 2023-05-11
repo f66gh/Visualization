@@ -3,52 +3,45 @@ import {singleCycleStore} from "@/store/singleCycleStore";
 // 不知道为什么利用d3封装好的on函数会传错数据，利用SOH不会传错的原理，点击rect时对一下数据传rectData
 
 let rectDataList = []
+let wholeVariable;
 const selectedCycle = (rectData) => {
-    let correctData;
-    for(let v of rectDataList) {
-        const tempWrong = rectData[5]
-        const tempTrue = v[5]
-        if(tempWrong.SOH === tempTrue.SOH && tempWrong.one === tempTrue.one  && tempWrong.two === tempTrue.two
-            && tempWrong.three === tempTrue.three  && tempWrong.four === tempTrue.four
-            && tempWrong.five === tempTrue.five) {
-            correctData = v
-            break;
-        }
-    }
+    let correctData = rectData;
     const useStore = singleCycleStore()
     if(correctData) {
-        useStore.updateSingleCycle(correctData)
+        const aveCtbAll = calAveCtb(wholeVariable)
+        useStore.updateSingleCycle({val: correctData[5], ave: aveCtbAll})
     }
 }
 const updateAve = (aveCtbAll) => {
     const useStore = singleCycleStore()
     useStore.updateAveCtb(aveCtbAll)
 }
-export const printView = (selectedData, leftMargin, rightMargin) => {
-    //颜色
-    //计算平均贡献度
-    const calAveCtb = (dataAll) => {
-        let sumCtb = {
-            one: 0,
-            two: 0,
-            three: 0,
-            four: 0,
-            five: 0
-        }
-        let len = dataAll.length
-        dataAll.forEach((v) => {
-            sumCtb.one += Number.parseFloat(v.one)
-            sumCtb.two += Number.parseFloat(v.two)
-            sumCtb.three += Number.parseFloat(v.three)
-            sumCtb.four += Number.parseFloat(v.four)
-            sumCtb.five += Number.parseFloat(v.five)
-        })
-        let aveCtb = {}
-        for (let item in sumCtb) {
-            aveCtb[item] = sumCtb[item] / len
-        }
-        return aveCtb
+
+//计算平均贡献度
+const calAveCtb = (dataAll) => {
+    let sumCtb = {
+        one: 0,
+        two: 0,
+        three: 0,
+        four: 0,
+        five: 0
     }
+    let len = dataAll.length
+    dataAll.forEach((v) => {
+        sumCtb.one += Number.parseFloat(v.one)
+        sumCtb.two += Number.parseFloat(v.two)
+        sumCtb.three += Number.parseFloat(v.three)
+        sumCtb.four += Number.parseFloat(v.four)
+        sumCtb.five += Number.parseFloat(v.five)
+    })
+    let aveCtb = {}
+    for (let item in sumCtb) {
+        aveCtb[item] = sumCtb[item] / len
+    }
+    return aveCtb
+}
+
+export const printView = (selectedData, leftMargin, rightMargin) => {
 
     //在用户选定循环区间内贡献度平均为正的特征值标记为蓝色，做平均负贡献的特征值标记为粉色
     const colorRule = (aveCtb) => {
@@ -184,6 +177,7 @@ export const printView = (selectedData, leftMargin, rightMargin) => {
 
     //数据处理
     const data = selectedData
+    wholeVariable = data
 
         // const data = switchCtb(oldData)
 
@@ -203,7 +197,7 @@ export const printView = (selectedData, leftMargin, rightMargin) => {
         })
 
         const newSOH = data.map(v => {
-            return +v.SOH
+            return +v.soh
         })
 
         newSOH.forEach(v => {
@@ -221,7 +215,7 @@ export const printView = (selectedData, leftMargin, rightMargin) => {
         // const dataLen = 150
         let lastSOH = data[0].SOH
         //每一次循环针对一次动力电池循环
-        for (let i = 1; i < dataLen; i++) {
+        for (let i = 0; i < dataLen; i++) {
             let d = data[i]
             let upsideLst = []
             let downsideLst = []
@@ -230,7 +224,7 @@ export const printView = (selectedData, leftMargin, rightMargin) => {
             //每一次循环针对一个特征值
             for (let item in d) {
                 if (item === "one" || item === "two" || item === "three" || item === "four" || item === "five"){
-                    const res = sideRule(d.SOH, lastSOH, d[item], aveCtbAll[item], upsideLst, downsideLst)
+                    const res = sideRule(d.soh, lastSOH, d[item], aveCtbAll[item], upsideLst, downsideLst)
                     upsideLst = res.upsideLst
                     downsideLst = res.downsideLst
                 }
@@ -254,7 +248,7 @@ export const printView = (selectedData, leftMargin, rightMargin) => {
                 three: d.three,
                 four: d.four,
                 five: d.five,
-                SOC: d.SOC_process
+                SOC: d.soc_process
             })
         }
 
@@ -273,33 +267,13 @@ export const printView = (selectedData, leftMargin, rightMargin) => {
                 sum += Math.abs(parseFloat(d.resPak[j].height))
             }
             let tempLst = []
-            // for (let z = 0; z < 5; z++) {
+            for (let z = 0; z < 5; z++) {
                 tempLst.push({
-                    ...d.resPak[0],
-                    height: Math.abs(parseFloat(d.resPak[0].height) * 50) / sum,
-                    start: Math.abs(parseFloat(d.resPak[0].start) * 50) / sum,
+                    ...d.resPak[z],
+                    height: Math.abs(parseFloat(d.resPak[z].height) * 50) / sum,
+                    start: Math.abs(parseFloat(d.resPak[z].start) * 50) / sum,
                 })
-            // }
-            tempLst.push({
-                ...d.resPak[1],
-                height: Math.abs(parseFloat(d.resPak[1].height) * 50) / sum,
-                start: Math.abs(parseFloat(d.resPak[1].start) * 50) / sum,
-            })
-            tempLst.push({
-                ...d.resPak[2],
-                height: Math.abs(parseFloat(d.resPak[2].height) * 50) / sum,
-                start: Math.abs(parseFloat(d.resPak[2].start) * 50) / sum,
-            })
-            tempLst.push({
-                ...d.resPak[3],
-                height: Math.abs(parseFloat(d.resPak[3].height) * 50) / sum,
-                start: Math.abs(parseFloat(d.resPak[3].start) * 50) / sum,
-            })
-            tempLst.push({
-                ...d.resPak[4],
-                height: Math.abs(parseFloat(d.resPak[4].height) * 50) / sum,
-                start: Math.abs(parseFloat(d.resPak[4].start) * 50) / sum,
-            })
+            }
             tempLst.push({
                 SOH: parseFloat(d.SOH),
                 one: +d.one,
@@ -318,7 +292,7 @@ export const printView = (selectedData, leftMargin, rightMargin) => {
         const endWidth = width - 50
         const startHeight = 50
         const endHeight = height - 50
-        const xChartData = d3.range(dataLen);
+        const xChartData = d3.range(dataLen + 1);
         const xRange = [50, width - 50]
         const highest = +d3.max(SOH)
         const lowest = +d3.min(SOH)
@@ -397,7 +371,7 @@ export const printView = (selectedData, leftMargin, rightMargin) => {
         //初始化视图要在单循环视图上绘制第一个循环
     rectDataList = []
     const useStore = singleCycleStore()
-    useStore.updateSingleCycle(Y[0])
+    selectedCycle(Y[0])
         g1.selectAll('rect')
             .data(Y)
             .join('rect')
@@ -530,6 +504,7 @@ export const printView = (selectedData, leftMargin, rightMargin) => {
             .curve(d3.curveStepAfter)
         const lastY = Y[Y.length - 1]
         Y.push(lastY)
+        console.log("Y:",Y)
         g.append('path').attr('stroke', 'black').attr('fill', 'none')
             .attr('d', pathLine(Y)) //由于曲线绘画的特性，所以把曲线输入数组末尾再加上一个相同的数据
         //绘制错误视图，可以容纳五个错误

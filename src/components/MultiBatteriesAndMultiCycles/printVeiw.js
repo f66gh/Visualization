@@ -1,6 +1,6 @@
 import * as d3 from 'd3'
-// import tempList from '@/json/tempList.json'
-import voltList from '@/json/voltList.json'
+import {tempList} from '@/plugins/axiosInstance'
+// import {voltList} from '@/plugins/axiosInstance'
 import {batteryListStore} from "@/store/batteryListStore";
 const dealData = (list) => {
     // 第一遍读取数据，得到每一次循环所有电池的数据（平均值）
@@ -45,7 +45,7 @@ const dealData = (list) => {
                 ave,
                 high,
                 low,
-                status: Math.abs(va - ave) / (high - low)
+                status: high - low ? Math.abs(va - ave) / (high - low) : 0
             }
         })
     })
@@ -67,7 +67,7 @@ export const heatView = () => {
     // 电压同理，电压和温度取最坏者作为电池损坏的具体表现
 
     // const {dealList: tempArr, n: tempMaxStatus} = dealData(tempList)
-    const {dealList: voltArr, n: voltMaxStatus} = dealData(voltList)
+    const {dealList: voltArr, n: voltMaxStatus} = dealData(tempList)
 
     // 第五遍，融合两个数组
     // const sumArr = tempArr.map((v, i) => {
@@ -82,11 +82,12 @@ export const heatView = () => {
 
     const cycleLen = voltArr.length
     const batteryLen = voltArr[0].length
-
+    console.log("batteryLen:", batteryLen)
     //建立容器对象
     const main = d3.select('#heatView');
     //设置绘图框尺寸
-    const width = 950;
+    // const width = 950;
+    const width = 340;
     const height = 2790;
     //建立svg对象
     const svg = main.append('svg')
@@ -116,8 +117,8 @@ export const heatView = () => {
                 return `translate(0, ${i * 10})`
             })
             .attr('fill', '#999')
-            .attr('width', '200')
-            .attr('height', '100')
+            // .attr('width', '200')
+            // .attr('height', '100')
             .selectAll('rect')
             .data(d => d)
             .join('rect')
@@ -137,7 +138,7 @@ export const heatView = () => {
                     .style('left', `${clientX + window.scrollX - 1376}px`)
                     .style('top', `${clientY + window.scrollY - 551}px`)
                     .html(`
-                            <div>Battery No.${rectData.battery}</div>
+                            <div>Probe No.${rectData.battery}</div>
                             <div>Cycle No.${rectData.cycle}</div>
                             <div>Volt: ${rectData.data}</div>
                             <div>status: ${

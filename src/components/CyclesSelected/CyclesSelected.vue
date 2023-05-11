@@ -39,6 +39,8 @@
 import { reactive } from "@vue/reactivity";
 import {printView} from "@/components/CyclesSelected/printView";
 import {defineComponent, onMounted} from "vue";
+import {connectionStatusStore} from "@/store/connectionStatusStore";
+const connectionStore = connectionStatusStore()
 
 export default defineComponent({
   setup(){
@@ -50,11 +52,17 @@ export default defineComponent({
       { text: "State of Health", color: "#93AE74" },
       { text: "Warning Range", color: "#EE9A9A" }
     ])
-    onMounted(() => {
+
+    connectionStore.$subscribe(() => {
       const div = document.getElementById('main')
       const divProperty = div.getClientRects()[0]
       printView(divProperty.left, divProperty.right)
     })
+    // onMounted(() => {
+    //   const div = document.getElementById('main')
+    //   const divProperty = div.getClientRects()[0]
+    //   printView(divProperty.left, divProperty.right)
+    // })
 
     return{
       leftLegends,

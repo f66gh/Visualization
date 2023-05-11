@@ -1,7 +1,7 @@
 <template>
     <div class="main-title" style="background-color: #31658C; justify-content: space-around">
       <p style="margin-left: 20px">Raw Data</p>
-      <p style="margin-right: 20px">Cycle No.{{selectedCycle - 1}}</p>
+      <p style="margin-right: 20px">Cycle No.{{selectedCycle}}</p>
     </div>
     <div class="container">
       <div class="top-container">
@@ -65,7 +65,9 @@
   import {selectedCycleNumStore} from "@/store/selectedCycleNumStore";
   import * as d3 from 'd3'
   import {onMounted} from "vue";
-  import competition from '@/json/competition.json'
+  import {competition} from '@/plugins/axiosInstance'
+  import {connectionStatusStore} from "@/store/connectionStatusStore";
+  const connectionStore = connectionStatusStore()
 
   // 注意这里写死了100
   const rangeVal = ref([30, 60])
@@ -80,8 +82,8 @@
 
   const sliderInput = (e) => {
     rangeVal.value = e
-    lineView(selectedCycle.value - 1, e)
-    getOriginList(selectedCycle.value - 1, e)
+    lineView(selectedCycle.value, e)
+    getOriginList(selectedCycle.value, e)
   }
 
   const info = reactive([{title: 'CarName', data: 'Trail Car'}, {title: 'Car ID', data: '476532'},
@@ -97,26 +99,22 @@
   cyclesStore.$subscribe((arg, state) => {
     vehicleStatus[1].data = state.selectedCycleNum - 1
     selectedCycle.value = state.selectedCycleNum
-      lineView(selectedCycle.value - 1, rangeVal.value)
-    getOriginList(selectedCycle.value - 1)
+      lineView(selectedCycle.value, rangeVal.value)
+    getOriginList(selectedCycle.value)
   })
 
-  onMounted(() => {
-    // readOriginList()
-  })
+  let originList;
 
-  const originList = competition
-  // const readOriginList = (() => {
-  //   d3.csv('src/csv/competition.csv').then((res) => {
-  //     originList.push(...res)
-  //     getOriginList()
-  //   })
-  // })
+  connectionStore.$subscribe(() => {
+    originList = competition
+    getOriginList(selectedCycle.value)
+  })
 
   const getOriginList = (selectedCycle = 1, e = [30, 60]) => {
+    if(!originList) return;
     const selectedList = []
       // 这里直接用的100次时间周期构成的单次循环
-      for(let i = (selectedCycle - 1) * 100; i <= selectedCycle * 100; i++){
+      for(let i = (selectedCycle) * 100; i <= (selectedCycle + 1) * 100; i++){
         selectedList.push(originList[i])
       }
       vehicleStatus[0].data = selectedList[0].yr_modahrmn

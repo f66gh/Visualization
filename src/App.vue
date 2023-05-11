@@ -7,6 +7,12 @@ import PrimaryInteractive from "./components/PrimaryInteractive/PrimaryInteracti
 import SingleBatteryInMultiCycles from "./components/SingleBatteryInMultiCycles/SingleBatteryInMultiCycles.vue";
 import SingleBatteryStatus from "./components/SingleBatteryStatus/SingleBatteryStatus.vue";
 import SingleCycleInformation from "./components/SingleCycleInformation/SingleCycleInformation.vue";
+import {onMounted, ref} from "vue";
+import {getAll} from "@/plugins/axiosInstance";
+import store from '@/store/index.js'
+import {connectionStatusStore} from "@/store/connectionStatusStore";
+
+
 components: {
   CyclesSelected,
   MultiBatteriesAndMultiCycles,
@@ -17,6 +23,10 @@ components: {
   SingleBatteryStatus,
   SingleCycleInformation
 }
+
+onMounted(() => {
+  getAll()
+})
 </script>
 
 <template>
@@ -114,4 +124,5 @@ components: {
     left: 372px;
   }
 }
+
 </style>
